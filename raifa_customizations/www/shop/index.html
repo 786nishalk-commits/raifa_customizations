@@ -123,6 +123,7 @@
   .crumb a:hover{color:var(--brand);}
 
   .shop-layout{display:grid;grid-template-columns:230px 1fr;gap:26px;margin-top:14px;align-items:start;}
+  .shop-main{min-width:0;}
   .filter-box{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:18px;position:sticky;top:120px;}
   .filter-box h4{font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);margin:0 0 12px;}
   .filter-opt{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:13.5px;cursor:pointer;}
@@ -136,6 +137,7 @@
   @keyframes shimmer{0%{background-position:100% 50%}100%{background-position:0 50%}}
 
   .pd-layout{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:10px;}
+  .pd-layout>*{min-width:0;}
   .pd-gallery{aspect-ratio:1/1;background:var(--brand-soft);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;overflow:hidden;}
   .pd-gallery svg{width:32%;height:32%;color:var(--brand);opacity:.5;}
   .pd-gallery img{width:100%;height:100%;object-fit:cover;}
@@ -189,11 +191,13 @@
   .empty-state svg{width:52px;height:52px;margin:0 auto 14px;color:var(--line);}
 
   .cart-page-layout{display:grid;grid-template-columns:1fr 340px;gap:30px;margin-top:14px;align-items:start;}
+  .cart-table{min-width:0;}
   .cart-table .cart-row{padding:18px 0;}
   .summary-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:22px;position:sticky;top:120px;}
   .summary-card h3{font-family:var(--font-d);font-size:16px;margin:0 0 14px;}
 
   .checkout-layout{display:grid;grid-template-columns:1fr 360px;gap:34px;margin-top:14px;align-items:start;}
+  .checkout-main{min-width:0;}
   .form-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:26px;margin-bottom:18px;}
   .form-card h3{font-family:var(--font-d);font-size:16px;margin:0 0 16px;}
   .field{margin-bottom:15px;}
@@ -577,7 +581,7 @@ async function renderShop(params){
         <label class="filter-opt"><input type="radio" name="catf" ${!activeCat?'checked':''} onchange="go('/shop')"> All Products</label>
         ${ctx.categories.map(c=>`<label class="filter-opt"><input type="radio" name="catf" ${activeCat===c.name?'checked':''} onchange="go('/shop?cat=${encodeURIComponent(c.name)}')"> ${escapeHtml(c.item_group_name||c.name)}</label>`).join('')}
       </aside>
-      <div>
+      <div class="shop-main">
         <div class="shop-toolbar">
           <span id="shopCount">Loading…</span>
           <select class="sort-select" onchange="go('/shop${activeCat?('?cat='+encodeURIComponent(activeCat)+'&'):'?'}sort='+this.value)">
@@ -700,7 +704,7 @@ function renderCheckout(){
     <div class="crumb"><a href="#/">Home</a> / <a href="#/cart">Cart</a> / Checkout</div>
     <h1 style="font-family:var(--font-d);font-size:26px;margin:8px 0 20px;">Checkout</h1>
     <div class="checkout-layout">
-      <div>
+      <div class="checkout-main">
         <div class="form-card">
           <h3>Delivery Details</h3>
           <div class="field-row">
