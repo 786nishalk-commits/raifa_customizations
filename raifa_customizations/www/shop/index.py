@@ -30,7 +30,7 @@ def get_categories():
         filters={"parent_item_group": STATIONERY_ROOT_ITEM_GROUP},
         fields=["name", "item_group_name"],
         order_by="item_group_name asc",
-        limit_page_length=16,
+        limit_page_length=200,  # categories are admin-controlled, safe to fetch all rather than cap at a small number
     )
     if not groups:
         # No sub-groups configured under the root group - fall back to

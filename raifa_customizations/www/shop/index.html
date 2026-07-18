@@ -233,6 +233,10 @@
   .toast svg{width:16px;height:16px;color:var(--accent);flex-shrink:0;}
 
   .site-footer{background:var(--ink);color:rgba(255,255,255,.7);margin-top:60px;}
+  .corp-bar{background:var(--ink);color:rgba(255,255,255,.9);text-align:center;font-size:12.5px;padding:9px 20px;letter-spacing:.01em;}
+  .corp-bar a{color:var(--accent);font-weight:600;}
+  .corp-bar a:hover{text-decoration:underline;}
+  .corp-bar svg{width:13px;height:13px;vertical-align:-2px;margin-right:5px;color:var(--accent);}
   .footer-inner{max-width:1440px;margin:0 auto;padding:44px 24px 26px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px;}
   .footer-inner h4{color:#fff;font-family:var(--font-d);font-size:14px;margin:0 0 14px;}
   .footer-inner p, .footer-inner a{font-size:13px;line-height:2;color:rgba(255,255,255,.65);}
@@ -280,6 +284,8 @@
   <symbol id="ic-wa" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.6.1-.2.3-.7.9-.9 1-.2.2-.3.2-.6.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.6-2.1-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.1.2-.3.2-.4.1-.2 0-.3 0-.5C10 9 9.4 7.6 9.2 7c-.2-.5-.4-.5-.6-.5h-.5c-.2 0-.5.1-.7.3-.2.3-1 1-1 2.3 0 1.4 1 2.7 1.1 2.9.1.2 2 3 4.8 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.3.2-.7.2-1.2.2-1.3-.1-.2-.3-.2-.6-.4z"/><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2z"/></symbol>
 </svg>
 
+<div class="corp-bar"><svg><use href="#ic-cash"/></svg>For corporate enquiries &amp; bulk orders, contact us at <a href="mailto:sales@raifacentre.qa">sales@raifacentre.qa</a></div>
+
 <header class="site-header">
   <div class="nav-top">
     <a href="#/" class="logo">
@@ -320,8 +326,8 @@
       <p style="max-width:280px;">Stationery, office supplies &amp; printing services in Doha, Qatar since 2012. Barwa Village &amp; Matar Qadeem branches.</p>
     </div>
     <div><h4>Shop</h4><p><a href="#/shop">All Products</a></p><p><a href="#/">Categories</a></p><p><a href="#/cart">Your Cart</a></p></div>
-    <div><h4>Account</h4><p><a href="#/account">Sign In</a></p><p><a href="#/account">Track Order</a></p></div>
-    <div><h4>Get in Touch</h4><p>Barwa Village, Doha</p><p>Matar Qadeem Branch</p><p>WhatsApp for printing enquiries</p></div>
+    <div><h4>Account</h4><p><a href="#/account">Sign In</a></p><p><a href="#/account">Track Order</a></p><p><a href="#/contact">Contact Us</a></p></div>
+    <div><h4>Get in Touch</h4><p>Barwa Village &amp; Matar Qadeem, Doha</p><p>Landline: <a href="tel:+97444551082">4455 1082</a></p><p>Stationery WhatsApp: <a href="https://wa.me/97433753565" target="_blank" rel="noopener">3375 3565</a></p><p>Printing WhatsApp: <a href="https://wa.me/97430252262" target="_blank" rel="noopener">3025 2262</a></p></div>
   </div>
   <div class="footer-bottom">© Raifa Centre Trading &amp; Advertising — RC Group</div>
 </footer>
@@ -348,7 +354,11 @@
 /* =========================================================
    CONFIG — the handful of things you'll want to edit yourself
    ========================================================= */
-const WHATSAPP_NUMBER = "974XXXXXXXX";   // TODO: replace with your real WhatsApp number (no + or spaces)
+const WHATSAPP_STATIONERY = "97433753565";   // stationery enquiries
+const WHATSAPP_PRINTING = "97430252262";     // printing enquiries
+const LANDLINE = "+97444551082";
+const CONTACT_EMAIL = "sales@raifacentre.qa";
+const WHATSAPP_NUMBER = WHATSAPP_STATIONERY; // floating button defaults to stationery (this is the stationery shop)
 const MIN_ORDER_VALUE = 100;             // orders below this cannot be placed (also enforced server-side)
 const FREE_DELIVERY_THRESHOLD = 300;     // QAR 300+ ships free
 const FLAT_DELIVERY_FEE = 20;            // QAR 100–299.99 pays this flat delivery charge
@@ -505,6 +515,12 @@ function renderCatBar(){
   document.getElementById('catBar').innerHTML = ['<a href="#/shop" class="cat-link">All Products</a>']
     .concat(ctx.categories.map(c=>`<a href="#/shop?cat=${encodeURIComponent(c.name)}" class="cat-link">${escapeHtml(c.item_group_name||c.name)}</a>`)).join('');
 }
+function catTile(c){
+  return `<a href="#/shop?cat=${encodeURIComponent(c.name)}" class="cat-tile"><div class="ic">${c.image?('<img src="'+escapeHtml(c.image)+'">'):('<svg><use href="#'+guessIcon(c.item_group_name||c.name)+'"/></svg>')}</div><span>${escapeHtml(c.item_group_name||c.name)}</span></a>`;
+}
+function catFilterOpt(c, activeCat){
+  return `<label class="filter-opt"><input type="radio" name="catf" ${activeCat===c.name?'checked':''} onchange="go(buildShopUrl({cat:'${encodeURIComponent(c.name)}'}))"> ${escapeHtml(c.item_group_name||c.name)}</label>`;
+}
 function productCard(p){
   return `<div class="prod-card">
     <div class="prod-img" onclick="go('/product/${encodeURIComponent(p.item_code)}')">
@@ -524,6 +540,18 @@ function productCard(p){
 function skeletonGrid(n){
   return `<div class="prod-grid">${Array(n).fill('<div class="skeleton" style="aspect-ratio:1/1.35"></div>').join('')}</div>`;
 }
+function pagerButtonsHtml(current, total){
+  const keep = new Set([1, total, current, current-1, current+1]);
+  let html = '';
+  let prev = 0;
+  for(let p=1; p<=total; p++){
+    if(!keep.has(p)) continue;
+    if(p - prev > 1) html += `<span style="padding:0 4px;color:var(--ink-soft);">…</span>`;
+    html += `<button class="${p===current?'active':''}" onclick="go(buildShopUrl({page:${p}}))">${p}</button>`;
+    prev = p;
+  }
+  return html;
+}
 
 /* ---------- views ---------- */
 function renderHome(){
@@ -540,16 +568,17 @@ function renderHome(){
       </div>
     </section>
     <div class="trust-strip">
-      <div class="trust-item"><svg><use href="#ic-truck"/></svg>Doha-wide delivery</div>
+      <div class="trust-item"><svg><use href="#ic-truck"/></svg>Delivery all over Qatar</div>
       <div class="trust-item"><svg><use href="#ic-cash"/></svg>Cash on delivery</div>
       <div class="trust-item"><svg><use href="#ic-shield"/></svg>Genuine brands only</div>
       <div class="trust-item"><svg><use href="#ic-check"/></svg>Since 2012</div>
     </div>
     <section class="block">
       <div class="block-head"><h2>Shop by <span class="hl">category</span></h2></div>
-      <div class="cat-grid">
-        ${ctx.categories.map(c=>`<a href="#/shop?cat=${encodeURIComponent(c.name)}" class="cat-tile"><div class="ic">${c.image?('<img src="'+escapeHtml(c.image)+'">'):('<svg><use href="#'+guessIcon(c.item_group_name||c.name)+'"/></svg>')}</div><span>${escapeHtml(c.item_group_name||c.name)}</span></a>`).join('')}
+      <div class="cat-grid" id="homeCatGrid">
+        ${ctx.categories.slice(0,8).map(catTile).join('')}
       </div>
+      ${ctx.categories.length>8 ? `<button class="btn btn-outline" style="margin-top:14px;" onclick="document.getElementById('homeCatGrid').innerHTML+=${JSON.stringify(ctx.categories.slice(8).map(catTile).join(''))};this.remove();">View all categories (${ctx.categories.length})</button>` : ''}
     </section>
     <section class="block">
       <div class="block-head"><h2>Popular right now</h2><a href="#/shop">View all →</a></div>
@@ -557,7 +586,7 @@ function renderHome(){
     </section>
     <section class="block">
       <div class="why-grid">
-        <div class="why-card"><svg class="ic"><use href="#ic-truck"/></svg><h3>Fast local delivery</h3><p>Ordered before 2pm, delivered the same day across most of Doha.</p></div>
+        <div class="why-card"><svg class="ic"><use href="#ic-truck"/></svg><h3>Fast delivery</h3><p>Same-day delivery for most items, as per availability.</p></div>
         <div class="why-card"><svg class="ic"><use href="#ic-cash"/></svg><h3>Pay on delivery</h3><p>No card needed — pay cash when your order arrives at your door.</p></div>
         <div class="why-card"><svg class="ic"><use href="#ic-shield"/></svg><h3>Trusted since 2012</h3><p>Two branches, thousands of business &amp; school customers across Qatar.</p></div>
       </div>
@@ -596,7 +625,13 @@ async function loadBrandFilter(selectedBrands){
   if(!section || !list) return; // user navigated away before this resolved
   if(!cachedBrands.length){ section.style.display = 'none'; return; }
   section.style.display = 'block';
-  list.innerHTML = cachedBrands.map(b=>`<label class="filter-opt"><input type="checkbox" value="${escapeHtml(b)}" ${selectedBrands.includes(b)?'checked':''} onchange="toggleBrandFilter()"> ${escapeHtml(b)}</label>`).join('');
+  const brandOpt = b=>`<label class="filter-opt"><input type="checkbox" value="${escapeHtml(b)}" ${selectedBrands.includes(b)?'checked':''} onchange="toggleBrandFilter()"> ${escapeHtml(b)}</label>`;
+  const anySelectedBeyond6 = selectedBrands.some(b => cachedBrands.indexOf(b) >= 6);
+  const visible = anySelectedBeyond6 ? cachedBrands : cachedBrands.slice(0,6);
+  const hidden = anySelectedBeyond6 ? [] : cachedBrands.slice(6);
+  list.innerHTML = `<div>${visible.map(brandOpt).join('')}</div>` +
+    (hidden.length ? `<div id="brandListHidden" style="display:none;">${hidden.map(brandOpt).join('')}</div>
+       <button class="tab" style="padding:6px 0;font-size:12.5px;" onclick="document.getElementById('brandListHidden').style.display='block';this.style.display='none';">View ${hidden.length} more ▾</button>` : '');
 }
 function toggleBrandFilter(){
   const checked = [...document.querySelectorAll('#brandFilterList input:checked')].map(i=>i.value);
@@ -613,13 +648,20 @@ async function renderShop(params){
   const priceMax = params.get('price_max') || '';
   const selectedBrands = (params.get('brand') || '').split(',').filter(Boolean);
 
+  const activeCatIndex = ctx.categories.findIndex(c=>c.name===activeCat);
+  const catsExpandedByDefault = activeCatIndex >= 8;
+  const visibleCats = catsExpandedByDefault ? ctx.categories : ctx.categories.slice(0,8);
+  const hiddenCats = catsExpandedByDefault ? [] : ctx.categories.slice(8);
+
   document.getElementById('app').innerHTML = `
     <div class="crumb"><a href="#/">Home</a> / Shop</div>
     <div class="shop-layout">
       <aside class="filter-box">
         <h4>Categories</h4>
         <label class="filter-opt"><input type="radio" name="catf" ${!activeCat?'checked':''} onchange="go(buildShopUrl({cat:null}))"> All Products</label>
-        ${ctx.categories.map(c=>`<label class="filter-opt"><input type="radio" name="catf" ${activeCat===c.name?'checked':''} onchange="go(buildShopUrl({cat:'${encodeURIComponent(c.name)}'}))"> ${escapeHtml(c.item_group_name||c.name)}</label>`).join('')}
+        <div id="catListVisible">${visibleCats.map(c=>catFilterOpt(c, activeCat)).join('')}</div>
+        <div id="catListHidden" style="display:none;">${hiddenCats.map(c=>catFilterOpt(c, activeCat)).join('')}</div>
+        ${hiddenCats.length ? `<button class="tab" style="padding:6px 0;font-size:12.5px;" onclick="document.getElementById('catListHidden').style.display='block';this.style.display='none';">View ${hiddenCats.length} more ▾</button>` : ''}
 
         <h4 style="margin-top:22px;">Price (QAR)</h4>
         <div style="display:flex;gap:8px;align-items:center;">
@@ -659,11 +701,7 @@ async function renderShop(params){
     document.getElementById('shopCount').textContent = `${result.total} product${result.total!==1?'s':''} found`;
     document.getElementById('shopGrid').innerHTML = `<div class="prod-grid">${result.items.map(productCard).join('') || '<p style="color:var(--ink-soft)">No products match your filters.</p>'}</div>`;
     const totalPages = Math.max(1, Math.ceil(result.total / result.page_size));
-    let pagerHtml = '';
-    for(let i=1;i<=totalPages;i++){
-      pagerHtml += `<button class="${i===page?'active':''}" onclick="go(buildShopUrl({page:${i}}))">${i}</button>`;
-    }
-    document.getElementById('shopPager').innerHTML = totalPages>1 ? pagerHtml : '';
+    document.getElementById('shopPager').innerHTML = totalPages>1 ? pagerButtonsHtml(page, totalPages) : '';
   }catch(e){
     if(myReq !== shopReqId) return;
     document.getElementById('shopGrid').innerHTML = `<p style="color:var(--danger)">Couldn't load products right now. Please refresh.</p>`;
@@ -858,6 +896,42 @@ async function placeOrder(){
   }
 }
 
+function renderContact(){
+  document.getElementById('app').innerHTML = `
+    <div class="crumb"><a href="#/">Home</a> / Contact Us</div>
+    <h1 style="font-family:var(--font-d);font-size:26px;margin:8px 0 6px;">Contact Us</h1>
+    <p style="color:var(--ink-soft);font-size:14.5px;margin:0 0 26px;max-width:560px;">Reach us directly, or via WhatsApp for the fastest response.</p>
+    <div class="acct-grid" style="grid-template-columns:repeat(2,1fr);max-width:760px;">
+      <div class="form-card">
+        <h3>Barwa Village Branch</h3>
+        <p style="font-size:13.5px;color:var(--ink-soft);line-height:1.8;">Barwa Village, Doha, Qatar</p>
+      </div>
+      <div class="form-card">
+        <h3>Matar Qadeem Branch</h3>
+        <p style="font-size:13.5px;color:var(--ink-soft);line-height:1.8;">Matar Qadeem, Doha, Qatar</p>
+      </div>
+      <div class="form-card">
+        <h3>Stationery Enquiries</h3>
+        <p style="font-size:13.5px;color:var(--ink-soft);line-height:1.8;">
+          WhatsApp / Call: <a href="https://wa.me/97433753565" target="_blank" rel="noopener" style="color:var(--brand);font-weight:600;">+974 3375 3565</a>
+        </p>
+      </div>
+      <div class="form-card">
+        <h3>Printing Enquiries</h3>
+        <p style="font-size:13.5px;color:var(--ink-soft);line-height:1.8;">
+          WhatsApp / Call: <a href="https://wa.me/97430252262" target="_blank" rel="noopener" style="color:var(--brand);font-weight:600;">+974 3025 2262</a>
+        </p>
+      </div>
+      <div class="form-card" style="grid-column:1/-1;">
+        <h3>General</h3>
+        <p style="font-size:13.5px;color:var(--ink-soft);line-height:1.8;">
+          Landline: <a href="tel:+97444551082" style="color:var(--brand);font-weight:600;">+974 4455 1082</a><br>
+          Email: <a href="mailto:sales@raifacentre.qa" style="color:var(--brand);font-weight:600;">sales@raifacentre.qa</a>
+        </p>
+      </div>
+    </div>
+  `;
+}
 function renderAccount(){
   document.getElementById('app').innerHTML = `
     <div class="crumb"><a href="#/">Home</a> / Account</div>
@@ -954,6 +1028,7 @@ function router(){
   else if(seg[0]==='cart'){ renderCartPage(); }
   else if(seg[0]==='checkout'){ renderCheckout(); }
   else if(seg[0]==='account'){ renderAccount(); }
+  else if(seg[0]==='contact'){ renderContact(); }
   else{ renderHome(); }
   window.scrollTo({top:0,behavior:'instant'});
 }
