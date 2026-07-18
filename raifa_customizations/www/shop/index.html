@@ -33,8 +33,9 @@
   .hl::before{content:"";position:absolute;left:-.14em;right:-.14em;bottom:.02em;top:.32em;background:var(--accent);opacity:.4;transform:rotate(-1.1deg);z-index:-1;border-radius:3px;}
 
   .site-header{position:sticky;top:0;z-index:60;background:#fff;border-bottom:1px solid var(--line);}
-  .nav-top{max-width:1240px;margin:0 auto;display:flex;align-items:center;gap:22px;padding:14px 24px;}
+  .nav-top{max-width:1440px;margin:0 auto;display:flex;align-items:center;gap:22px;padding:14px 24px;}
   .logo{font-family:var(--font-d);font-weight:700;font-size:21px;color:var(--brand);white-space:nowrap;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;}
+  .logo-img{height:32px;width:auto;display:block;}
   .logo-mark{width:30px;height:30px;background:var(--brand);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--font-d);font-weight:700;font-size:15px;flex-shrink:0;overflow:hidden;}
   .logo-mark img{width:100%;height:100%;object-fit:cover;}
   .search-wrap{flex:1;max-width:520px;position:relative;}
@@ -47,12 +48,12 @@
   .icon-btn svg{width:21px;height:21px;}
   .cart-badge{position:absolute;top:2px;right:6px;background:var(--accent);color:var(--ink);font-family:var(--font-m);font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px;}
   .cat-bar{border-top:1px solid var(--line);overflow-x:auto;}
-  .cat-bar-inner{max-width:1240px;margin:0 auto;display:flex;gap:4px;padding:0 24px;white-space:nowrap;}
+  .cat-bar-inner{max-width:1440px;margin:0 auto;display:flex;gap:4px;padding:0 24px;white-space:nowrap;}
   .cat-link{padding:11px 14px;font-size:13.5px;font-weight:600;color:var(--ink-soft);border-bottom:2.5px solid transparent;}
   .cat-link:hover{color:var(--brand);}
   .cat-link.active{color:var(--brand);border-color:var(--accent);}
 
-  main{max-width:1240px;margin:0 auto;padding:0 24px 64px;min-height:60vh;}
+  main{max-width:1440px;margin:0 auto;padding:0 24px 64px;min-height:60vh;}
 
   .hero{background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%);border-radius:20px;margin:24px 0;padding:52px 40px;color:#fff;position:relative;overflow:hidden;}
   .hero::after{content:"";position:absolute;right:-60px;top:-60px;width:280px;height:280px;background:rgba(255,255,255,.05);border-radius:50%;}
@@ -93,12 +94,12 @@
   .cat-tile .ic img{width:100%;height:100%;object-fit:cover;}
   .cat-tile span{font-size:12.5px;font-weight:600;line-height:1.3;display:block;}
 
-  .prod-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+  .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px;}
   .prod-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;transition:transform .13s ease,box-shadow .13s ease;position:relative;}
   .prod-card:hover{transform:translateY(-3px);box-shadow:var(--shadow);}
-  .prod-img{aspect-ratio:1/1;background:var(--brand-soft);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;}
+  .prod-img{aspect-ratio:1/1;background:var(--brand-soft);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;padding:14px;}
   .prod-img svg{width:38%;height:38%;color:var(--brand);opacity:.55;}
-  .prod-img img{width:100%;height:100%;object-fit:cover;}
+  .prod-img img{width:100%;height:100%;object-fit:contain;}
   .qv-btn{position:absolute;bottom:8px;right:8px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:11px;font-weight:600;opacity:0;transition:opacity .12s ease;display:flex;align-items:center;gap:5px;}
   .prod-card:hover .qv-btn{opacity:1;}
   .qv-btn svg{width:13px;height:13px;}
@@ -138,9 +139,9 @@
 
   .pd-layout{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:10px;}
   .pd-layout>*{min-width:0;}
-  .pd-gallery{aspect-ratio:1/1;background:var(--brand-soft);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .pd-gallery{aspect-ratio:1/1;background:var(--brand-soft);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;overflow:hidden;padding:24px;}
   .pd-gallery svg{width:32%;height:32%;color:var(--brand);opacity:.5;}
-  .pd-gallery img{width:100%;height:100%;object-fit:cover;}
+  .pd-gallery img{width:100%;height:100%;object-fit:contain;}
   .pd-info h1{font-family:var(--font-d);font-size:26px;margin:0 0 8px;font-weight:600;}
   .pd-sku{font-family:var(--font-m);font-size:12px;color:var(--ink-soft);margin-bottom:14px;}
   .pd-price{font-family:var(--font-m);font-size:28px;font-weight:600;color:var(--brand);margin:14px 0;}
@@ -159,9 +160,9 @@
   .modal-box{background:#fff;border-radius:18px;max-width:640px;width:100%;max-height:88vh;overflow:auto;position:relative;}
   .modal-close{position:absolute;top:14px;right:14px;background:var(--paper);border:none;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;z-index:2;}
   .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;}
-  .modal-img{aspect-ratio:1/1;background:var(--brand-soft);display:flex;align-items:center;justify-content:center;border-radius:18px 0 0 18px;overflow:hidden;}
+  .modal-img{aspect-ratio:1/1;background:var(--brand-soft);display:flex;align-items:center;justify-content:center;border-radius:18px 0 0 18px;overflow:hidden;padding:20px;}
   .modal-img svg{width:34%;height:34%;color:var(--brand);opacity:.5;}
-  .modal-img img{width:100%;height:100%;object-fit:cover;}
+  .modal-img img{width:100%;height:100%;object-fit:contain;}
   .modal-body{padding:26px;}
   .modal-body h3{font-family:var(--font-d);font-size:19px;margin:0 0 6px;}
 
@@ -176,7 +177,7 @@
   .cart-row{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);}
   .cart-row .thumb{width:56px;height:56px;background:var(--brand-soft);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;}
   .cart-row .thumb svg{width:26px;height:26px;color:var(--brand);opacity:.55;}
-  .cart-row .thumb img{width:100%;height:100%;object-fit:cover;}
+  .cart-row .thumb img{width:100%;height:100%;object-fit:contain;}
   .cart-row-info{flex:1;min-width:0;}
   .cart-row-info .nm{font-size:13px;font-weight:600;margin-bottom:4px;}
   .cart-row-info .rm{font-size:11.5px;color:var(--danger);font-weight:600;}
@@ -232,7 +233,7 @@
   .toast svg{width:16px;height:16px;color:var(--accent);flex-shrink:0;}
 
   .site-footer{background:var(--ink);color:rgba(255,255,255,.7);margin-top:60px;}
-  .footer-inner{max-width:1240px;margin:0 auto;padding:44px 24px 26px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px;}
+  .footer-inner{max-width:1440px;margin:0 auto;padding:44px 24px 26px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px;}
   .footer-inner h4{color:#fff;font-family:var(--font-d);font-size:14px;margin:0 0 14px;}
   .footer-inner p, .footer-inner a{font-size:13px;line-height:2;color:rgba(255,255,255,.65);}
   .footer-bottom{border-top:1px solid rgba(255,255,255,.1);text-align:center;padding:16px;font-size:12px;color:rgba(255,255,255,.4);}
@@ -282,11 +283,7 @@
 <header class="site-header">
   <div class="nav-top">
     <a href="#/" class="logo">
-      <span class="logo-mark">RC</span>
-      <!-- To use a real logo image instead of the "RC" mark, replace the
-           line above with:
-           <span class="logo-mark"><img src="/files/YOUR-LOGO.png"></span> -->
-      Raifa Centre
+      <img src="/files/Raifa%20Logo%20-%20003-01-01.png" alt="Raifa Centre" class="logo-img">
     </a>
     <div class="search-wrap">
       <svg class="search-icon"><use href="#ic-search"/></svg>
@@ -319,7 +316,7 @@
 <footer class="site-footer">
   <div class="footer-inner">
     <div>
-      <div class="logo" style="color:#fff;margin-bottom:12px;"><span class="logo-mark">RC</span>Raifa Centre</div>
+      <div style="font-family:var(--font-d);font-weight:700;font-size:19px;color:#fff;margin-bottom:12px;">Raifa Centre</div>
       <p style="max-width:280px;">Stationery, office supplies &amp; printing services in Doha, Qatar since 2012. Barwa Village &amp; Matar Qadeem branches.</p>
     </div>
     <div><h4>Shop</h4><p><a href="#/shop">All Products</a></p><p><a href="#/">Categories</a></p><p><a href="#/cart">Your Cart</a></p></div>
@@ -352,8 +349,10 @@
    CONFIG — the handful of things you'll want to edit yourself
    ========================================================= */
 const WHATSAPP_NUMBER = "974XXXXXXXX";   // TODO: replace with your real WhatsApp number (no + or spaces)
-const FREE_DELIVERY_THRESHOLD = null;    // e.g. 150 for "free delivery over QAR 150", or null to disable
-const FLAT_DELIVERY_FEE = 0;             // e.g. 15 for a flat QAR 15 delivery charge, or 0 if delivery is free / decided by staff on call
+const MIN_ORDER_VALUE = 100;             // orders below this cannot be placed (also enforced server-side)
+const FREE_DELIVERY_THRESHOLD = 300;     // QAR 300+ ships free
+const FLAT_DELIVERY_FEE = 20;            // QAR 100–299.99 pays this flat delivery charge
+// Keep these three numbers in sync with MIN_ORDER_VALUE / FREE_DELIVERY_THRESHOLD / DELIVERY_FEE_FLAT in api/shop.py
 document.getElementById('waFloat').href = "https://wa.me/" + WHATSAPP_NUMBER;
 
 const ctx = window.RAIFA_SHOP_CTX;
@@ -567,24 +566,78 @@ function renderHome(){
 }
 
 let shopReqId = 0;
+let currentShopParams = new URLSearchParams();
+let cachedBrands = null; // fetched once, reused across filter changes
+
+function buildShopUrl(overrides){
+  const merged = new URLSearchParams(currentShopParams.toString());
+  for(const k in overrides){
+    const v = overrides[k];
+    if(v === null || v === undefined || v === ''){ merged.delete(k); }
+    else { merged.set(k, v); }
+  }
+  if(!('page' in overrides)) merged.delete('page'); // any filter change resets to page 1
+  const qs = merged.toString();
+  return '/shop' + (qs ? '?'+qs : '');
+}
+
+function applyPriceFilter(){
+  const min = document.getElementById('filterPriceMin').value;
+  const max = document.getElementById('filterPriceMax').value;
+  go(buildShopUrl({price_min: min, price_max: max}));
+}
+
+async function loadBrandFilter(selectedBrands){
+  if(cachedBrands === null){
+    try{ cachedBrands = await apiGet('get_brands', {}); }catch(e){ cachedBrands = []; }
+  }
+  const section = document.getElementById('brandFilterSection');
+  const list = document.getElementById('brandFilterList');
+  if(!section || !list) return; // user navigated away before this resolved
+  if(!cachedBrands.length){ section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = cachedBrands.map(b=>`<label class="filter-opt"><input type="checkbox" value="${escapeHtml(b)}" ${selectedBrands.includes(b)?'checked':''} onchange="toggleBrandFilter()"> ${escapeHtml(b)}</label>`).join('');
+}
+function toggleBrandFilter(){
+  const checked = [...document.querySelectorAll('#brandFilterList input:checked')].map(i=>i.value);
+  go(buildShopUrl({brand: checked.join(',') || null}));
+}
+
 async function renderShop(params){
+  currentShopParams = params;
   const activeCat = params.get('cat') || '';
   const q = params.get('q') || '';
   const sort = params.get('sort') || 'name_asc';
   const page = parseInt(params.get('page')||'1');
+  const priceMin = params.get('price_min') || '';
+  const priceMax = params.get('price_max') || '';
+  const selectedBrands = (params.get('brand') || '').split(',').filter(Boolean);
 
   document.getElementById('app').innerHTML = `
     <div class="crumb"><a href="#/">Home</a> / Shop</div>
     <div class="shop-layout">
       <aside class="filter-box">
         <h4>Categories</h4>
-        <label class="filter-opt"><input type="radio" name="catf" ${!activeCat?'checked':''} onchange="go('/shop')"> All Products</label>
-        ${ctx.categories.map(c=>`<label class="filter-opt"><input type="radio" name="catf" ${activeCat===c.name?'checked':''} onchange="go('/shop?cat=${encodeURIComponent(c.name)}')"> ${escapeHtml(c.item_group_name||c.name)}</label>`).join('')}
+        <label class="filter-opt"><input type="radio" name="catf" ${!activeCat?'checked':''} onchange="go(buildShopUrl({cat:null}))"> All Products</label>
+        ${ctx.categories.map(c=>`<label class="filter-opt"><input type="radio" name="catf" ${activeCat===c.name?'checked':''} onchange="go(buildShopUrl({cat:'${encodeURIComponent(c.name)}'}))"> ${escapeHtml(c.item_group_name||c.name)}</label>`).join('')}
+
+        <h4 style="margin-top:22px;">Price (QAR)</h4>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="number" min="0" id="filterPriceMin" placeholder="Min" value="${escapeHtml(priceMin)}" style="width:100%;padding:7px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;">
+          <span style="color:var(--ink-soft);">–</span>
+          <input type="number" min="0" id="filterPriceMax" placeholder="Max" value="${escapeHtml(priceMax)}" style="width:100%;padding:7px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;">
+        </div>
+        <button class="btn btn-outline" style="width:100%;margin-top:10px;padding:8px;font-size:12.5px;" onclick="applyPriceFilter()">Apply</button>
+
+        <div id="brandFilterSection" style="display:none;">
+          <h4 style="margin-top:22px;">Brand</h4>
+          <div id="brandFilterList"></div>
+        </div>
       </aside>
       <div class="shop-main">
         <div class="shop-toolbar">
           <span id="shopCount">Loading…</span>
-          <select class="sort-select" onchange="go('/shop${activeCat?('?cat='+encodeURIComponent(activeCat)+'&'):'?'}sort='+this.value)">
+          <select class="sort-select" onchange="go(buildShopUrl({sort:this.value}))">
             <option value="name_asc" ${sort==='name_asc'?'selected':''}>Name (A–Z)</option>
             <option value="price_asc" ${sort==='price_asc'?'selected':''}>Price: Low to High</option>
             <option value="price_desc" ${sort==='price_desc'?'selected':''}>Price: High to Low</option>
@@ -597,16 +650,18 @@ async function renderShop(params){
     </div>
   `;
 
+  loadBrandFilter(selectedBrands);
+
   const myReq = ++shopReqId;
   try{
-    const result = await apiGet('get_products', {item_group: activeCat, search: q, sort, page, page_size: 24});
+    const result = await apiGet('get_products', {item_group: activeCat, search: q, sort, page, page_size: 24, price_min: priceMin, price_max: priceMax, brand: selectedBrands.join(',')});
     if(myReq !== shopReqId) return; // a newer request superseded this one
     document.getElementById('shopCount').textContent = `${result.total} product${result.total!==1?'s':''} found`;
     document.getElementById('shopGrid').innerHTML = `<div class="prod-grid">${result.items.map(productCard).join('') || '<p style="color:var(--ink-soft)">No products match your filters.</p>'}</div>`;
     const totalPages = Math.max(1, Math.ceil(result.total / result.page_size));
     let pagerHtml = '';
     for(let i=1;i<=totalPages;i++){
-      pagerHtml += `<button class="${i===page?'active':''}" onclick="go('/shop?${activeCat?('cat='+encodeURIComponent(activeCat)+'&'):''}${q?('q='+encodeURIComponent(q)+'&'):''}sort=${sort}&page=${i}')">${i}</button>`;
+      pagerHtml += `<button class="${i===page?'active':''}" onclick="go(buildShopUrl({page:${i}}))">${i}</button>`;
     }
     document.getElementById('shopPager').innerHTML = totalPages>1 ? pagerHtml : '';
   }catch(e){
@@ -680,15 +735,19 @@ function renderCartPage(){
         <div class="sum-line"><span>Subtotal</span><span>${qar(cartTotal())}</span></div>
         <div class="sum-line"><span>Delivery</span><span>${deliveryLineText()}</span></div>
         <div class="sum-line total"><span>Total</span><span class="amt">${qar(cartTotal()+deliveryFee())}</span></div>
-        <button class="btn btn-primary btn-block" style="margin-top:16px" onclick="go('/checkout')">Proceed to Checkout</button>
+        ${cartTotal() < MIN_ORDER_VALUE
+          ? `<p style="font-size:12.5px;color:var(--danger);margin:10px 0 0;">Add ${qar(MIN_ORDER_VALUE - cartTotal())} more to reach the ${qar(MIN_ORDER_VALUE)} minimum order.</p>
+             <button class="btn btn-primary btn-block" style="margin-top:10px" disabled>Proceed to Checkout</button>`
+          : `<p style="font-size:11.5px;color:var(--ink-soft);margin:10px 0 0;">${cartTotal() < FREE_DELIVERY_THRESHOLD ? `Add ${qar(FREE_DELIVERY_THRESHOLD - cartTotal())} more for free delivery.` : 'Free delivery unlocked.'}</p>
+             <button class="btn btn-primary btn-block" style="margin-top:10px" onclick="go('/checkout')">Proceed to Checkout</button>`
+        }
         <button class="btn btn-outline btn-block" style="margin-top:8px" onclick="go('/shop')">Continue Shopping</button>
       </div>
     </div>`}
   `;
 }
 function deliveryFee(){
-  if(FREE_DELIVERY_THRESHOLD!=null && cartTotal()>=FREE_DELIVERY_THRESHOLD) return 0;
-  return FLAT_DELIVERY_FEE;
+  return cartTotal() >= FREE_DELIVERY_THRESHOLD ? 0 : FLAT_DELIVERY_FEE;
 }
 function deliveryLineText(){
   const fee = deliveryFee();
@@ -700,6 +759,10 @@ function renderCheckout(){
     document.getElementById('app').innerHTML = `<div class="empty-state" style="padding:80px 20px;"><svg><use href="#ic-cart"/></svg><p>Your cart is empty — add something before checking out.</p><button class="btn btn-primary" style="margin-top:10px" onclick="go('/shop')">Shop Now</button></div>`;
     return;
   }
+  if(cartTotal() < MIN_ORDER_VALUE){
+    document.getElementById('app').innerHTML = `<div class="empty-state" style="padding:80px 20px;"><svg><use href="#ic-cart"/></svg><p>Minimum order value is ${qar(MIN_ORDER_VALUE)} — add ${qar(MIN_ORDER_VALUE - cartTotal())} more to checkout.</p><button class="btn btn-primary" style="margin-top:10px" onclick="go('/shop')">Add More Items</button></div>`;
+    return;
+  }
   document.getElementById('app').innerHTML = `
     <div class="crumb"><a href="#/">Home</a> / <a href="#/cart">Cart</a> / Checkout</div>
     <h1 style="font-family:var(--font-d);font-size:26px;margin:8px 0 20px;">Checkout</h1>
@@ -708,12 +771,23 @@ function renderCheckout(){
         <div class="form-card">
           <h3>Delivery Details</h3>
           <div class="field-row">
-            <div class="field"><label>Full Name</label><input id="ckName" placeholder="e.g. Ahmed Al-Sayed" value="${escapeHtml(ctx.user_fullname||'')}"></div>
-            <div class="field"><label>Mobile Number</label><input id="ckMobile" placeholder="+974 5xxx xxxx"></div>
+            <div class="field"><label>Full Name *</label><input id="ckName" placeholder="e.g. Ahmed Al-Sayed" value="${escapeHtml(ctx.user_fullname||'')}"></div>
+            <div class="field"><label>Mobile Number *</label><input id="ckMobile" placeholder="+974 5xxx xxxx"></div>
           </div>
           <div class="field"><label>Email (optional)</label><input id="ckEmail" placeholder="you@example.com" value="${escapeHtml(ctx.user_email||'')}"></div>
-          <div class="field"><label>Delivery Address</label><textarea rows="3" id="ckAddress" placeholder="Zone / Street / Building / Villa or Office no."></textarea></div>
+          <div class="field"><label>Delivery Address *</label><textarea rows="3" id="ckAddress" placeholder="Zone / Street / Building / Villa or Office no."></textarea></div>
+          <div class="field">
+            <label style="display:flex;align-items:center;gap:8px;font-weight:500;cursor:pointer;">
+              <input type="checkbox" id="ckDiffBilling" onchange="document.getElementById('billingAddressField').style.display=this.checked?'block':'none'" style="width:15px;height:15px;accent-color:var(--brand);">
+              Billing address is different from delivery address
+            </label>
+          </div>
+          <div class="field" id="billingAddressField" style="display:none;">
+            <label>Billing Address</label>
+            <textarea rows="3" id="ckBillingAddress" placeholder="Billing address (if different from delivery)"></textarea>
+          </div>
           <div class="field"><label>Order Notes (optional)</label><textarea rows="2" id="ckNotes" placeholder="Delivery instructions, landmark, preferred time…"></textarea></div>
+          <p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 4px;">* Required</p>
           <div class="field-error" id="ckError"></div>
         </div>
         <div class="form-card">
@@ -742,11 +816,18 @@ async function placeOrder(){
   const mobile = document.getElementById('ckMobile').value.trim();
   const email = document.getElementById('ckEmail').value.trim();
   const address = document.getElementById('ckAddress').value.trim();
+  const diffBilling = document.getElementById('ckDiffBilling').checked;
+  const billingAddress = diffBilling ? document.getElementById('ckBillingAddress').value.trim() : '';
   const notes = document.getElementById('ckNotes').value.trim();
   const errBox = document.getElementById('ckError');
 
   if(!name || !mobile || !address){
     errBox.textContent = 'Please fill in your name, mobile number and delivery address.';
+    errBox.classList.add('show');
+    return;
+  }
+  if(cartTotal() < MIN_ORDER_VALUE){
+    errBox.textContent = `Minimum order value is ${qar(MIN_ORDER_VALUE)}. Please add more items to your cart.`;
     errBox.classList.add('show');
     return;
   }
@@ -758,7 +839,7 @@ async function placeOrder(){
   try{
     const result = await apiPost('place_order', {
       cart_items: JSON.stringify(cart.map(l=>({item_code:l.item_code, qty:l.qty}))),
-      customer_details: JSON.stringify({name, mobile, email, address, notes})
+      customer_details: JSON.stringify({name, mobile, email, address, billing_address: billingAddress, notes})
     });
     cart = []; saveCart(); renderCartBadge();
     document.getElementById('app').innerHTML = `
