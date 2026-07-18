@@ -18,6 +18,17 @@ DEFAULT_CUSTOMER_GROUP = "Individual"               # Customer Group assigned to
 DEFAULT_TERRITORY = "Qatar"                         # Territory assigned to new website customers
 # ============================================================================
 
+# Business rules — keep these three numbers in sync with the matching
+# MIN_ORDER_VALUE / FREE_DELIVERY_THRESHOLD / FLAT_DELIVERY_FEE constants
+# in www/shop/index.html (there's no shared config between the two files).
+MIN_ORDER_VALUE = 100
+FREE_DELIVERY_THRESHOLD = 300
+DELIVERY_FEE_FLAT = 20
+DELIVERY_FEE_ITEM_CODE = "DELIVERY-CHARGE"  # create this as a non-stock service Item if you want
+                                             # the delivery fee to automatically appear as a line on
+                                             # the Sales Order total. Until it exists, orders still go
+                                             # through fine — the fee is just noted, not line-totalled.
+
 import frappe
 from frappe import _
 from frappe.utils import flt, cint, nowdate, add_days
@@ -115,9 +126,9 @@ def get_or_create_customer(name, mobile, email=None):
 # ---------------------------------------------------------------------------
 
 @frappe.whitelist(allow_guest=True)
-def get_products(item_group=None, search=None, sort="name_asc", page=1, page_size=24):
-    """Paginated, searchable, sortable product listing. Guest-accessible
-    (read-only) so anyone can browse without logging in."""
+def get_products(item_group=None, search=None, sort="name_asc", page=1, page_size=24, brand=None, price_min=None, price_max=None):
+    """Paginated, searchable, sortable, filterable product listing.
+    Guest-accessible (read-only) so anyone can browse without logging in."""
     page = cint(page) or 1
     page_size = min(cint(page_size) or 24, 60)
 
@@ -125,6 +136,10 @@ def get_products(item_group=None, search=None, sort="name_asc", page=1, page_siz
     filters = {"disabled": 0, "item_group": ["in", valid_groups]}
     if item_group and item_group in valid_groups:
         filters["item_group"] = item_group
+
+    brand_list = [b.strip() for b in (brand or "").split(",") if b.strip()]
+    if brand_list:
+        filters["brand"] = ["in", brand_list]
 
     or_filters = None
     if search:
@@ -138,13 +153,45 @@ def get_products(item_group=None, search=None, sort="name_asc", page=1, page_siz
     if sort == "newest":
         order_by = "creation desc"
 
+    has_price_filter = bool(price_min) or bool(price_max)
+
+    if has_price_filter:
+        # Price lives in a separate doctype (Item Price), so when a price
+        # filter is active we fetch a larger candidate batch, filter by
+        # price in Python, then paginate the filtered result. Fine at this
+        # catalogue size; if your catalogue grows into the tens of
+        # thousands this would be worth moving into a single SQL join.
+        candidates = frappe.get_all(
+            "Item",
+            filters=filters,
+            or_filters=or_filters,
+            fields=["item_code", "item_name", "item_group", "image", "stock_uom", "description", "brand"],
+            order_by=order_by,
+            limit_page_length=2000,
+        )
+        attach_rates(candidates)
+        pmin = flt(price_min) if price_min else None
+        pmax = flt(price_max) if price_max else None
+        if pmin is not None:
+            candidates = [i for i in candidates if i["rate"] >= pmin]
+        if pmax is not None:
+            candidates = [i for i in candidates if i["rate"] <= pmax]
+        if sort == "price_asc":
+            candidates.sort(key=lambda i: i["rate"])
+        elif sort == "price_desc":
+            candidates.sort(key=lambda i: i["rate"], reverse=True)
+        total = len(candidates)
+        start = (page - 1) * page_size
+        items = candidates[start:start + page_size]
+        return {"items": items, "total": total, "page": page, "page_size": page_size}
+
     total = frappe.db.count("Item", filters=filters)
 
     items = frappe.get_all(
         "Item",
         filters=filters,
         or_filters=or_filters,
-        fields=["item_code", "item_name", "item_group", "image", "stock_uom", "description"],
+        fields=["item_code", "item_name", "item_group", "image", "stock_uom", "description", "brand"],
         order_by=order_by,
         limit_start=(page - 1) * page_size,
         limit_page_length=page_size,
@@ -158,6 +205,24 @@ def get_products(item_group=None, search=None, sort="name_asc", page=1, page_siz
         items.sort(key=lambda i: i["rate"], reverse=True)
 
     return {"items": items, "total": total, "page": page, "page_size": page_size}
+
+
+@frappe.whitelist(allow_guest=True)
+def get_brands():
+    """Distinct brand names among sellable items, for the sidebar Brand
+    filter. Returns an empty list if the Brand field isn't populated in
+    your catalogue - the frontend hides the filter automatically in that
+    case rather than showing an empty section."""
+    valid_groups = get_stationery_item_groups()
+    brands = frappe.get_all(
+        "Item",
+        filters={"item_group": ["in", valid_groups], "disabled": 0, "brand": ["is", "set"]},
+        pluck="brand",
+        distinct=True,
+        order_by="brand asc",
+        limit_page_length=300,
+    )
+    return sorted(set(b for b in brands if b))
 
 
 @frappe.whitelist(allow_guest=True)
@@ -193,7 +258,7 @@ def place_order(cart_items, customer_details):
     - see SETUP_README.md if you'd rather auto-submit instead.
 
     cart_items:       JSON list of {"item_code": str, "qty": number}
-    customer_details: JSON dict of {"name","mobile","email","address","notes"}
+    customer_details: JSON dict of {"name","mobile","email","address","billing_address","notes"}
     """
     cart_items = frappe.parse_json(cart_items)
     customer_details = frappe.parse_json(customer_details)
@@ -204,6 +269,7 @@ def place_order(cart_items, customer_details):
     name = (customer_details.get("name") or "").strip()
     mobile = (customer_details.get("mobile") or "").strip()
     address_text = (customer_details.get("address") or "").strip()
+    billing_address_text = (customer_details.get("billing_address") or "").strip()
 
     if not name or not mobile or not address_text:
         frappe.throw(_("Name, mobile number, and delivery address are required."))
@@ -227,12 +293,15 @@ def place_order(cart_items, customer_details):
         so.custom_order_source = "Website"
     if meta.has_field("custom_delivery_address"):
         so.custom_delivery_address = address_text
+    if meta.has_field("custom_billing_address") and billing_address_text:
+        so.custom_billing_address = billing_address_text
     if meta.has_field("custom_customer_mobile"):
         so.custom_customer_mobile = mobile
     if meta.has_field("custom_order_notes") and customer_details.get("notes"):
         so.custom_order_notes = customer_details.get("notes")
 
     added_any = False
+    items_subtotal = 0.0
     for line in cart_items:
         item_code = line.get("item_code")
         qty = flt(line.get("qty") or 0)
@@ -251,10 +320,31 @@ def place_order(cart_items, customer_details):
             "rate": rate,
             "delivery_date": so.delivery_date,
         })
+        items_subtotal += rate * qty
         added_any = True
 
     if not added_any:
         frappe.throw(_("None of the items in your cart are currently available."))
+
+    if items_subtotal < MIN_ORDER_VALUE:
+        frappe.throw(_("Minimum order value is QAR {0}.").format(MIN_ORDER_VALUE))
+
+    # Delivery fee: added as a real line item so it's reflected in the
+    # order's actual total, IF you've created the DELIVERY_FEE_ITEM_CODE
+    # item. If not, the order still goes through fine - the fee is just
+    # noted in Order Notes instead, for staff to add manually.
+    delivery_fee = 0 if items_subtotal >= FREE_DELIVERY_THRESHOLD else DELIVERY_FEE_FLAT
+    if delivery_fee > 0:
+        if frappe.db.exists("Item", DELIVERY_FEE_ITEM_CODE):
+            so.append("items", {
+                "item_code": DELIVERY_FEE_ITEM_CODE,
+                "qty": 1,
+                "rate": delivery_fee,
+                "delivery_date": so.delivery_date,
+            })
+        elif meta.has_field("custom_order_notes"):
+            note = f"Delivery fee QAR {delivery_fee} applies but Item '{DELIVERY_FEE_ITEM_CODE}' doesn't exist yet - add it to the order total manually."
+            so.custom_order_notes = (f"{so.custom_order_notes}\n{note}" if so.custom_order_notes else note)
 
     so.insert(ignore_permissions=True)
 
