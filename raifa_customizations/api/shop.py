@@ -141,45 +141,61 @@ def get_products(item_group=None, search=None, sort="name_asc", page=1, page_siz
     if brand_list:
         filters["brand"] = ["in", brand_list]
 
+    search = (search or "").strip()
     or_filters = None
     if search:
-        search = search.strip()
-        or_filters = {
-            "item_name": ["like", f"%{search}%"],
-            "item_code": ["like", f"%{search}%"],
-        }
+        # Match items containing ANY word from the search phrase (not just
+        # the exact phrase as one block) - e.g. searching "a4 paper" also
+        # finds "Copier Paper A4 80gsm", not only items with that exact
+        # substring. Exact-phrase matches are still ranked first below.
+        words = [w for w in search.split() if w]
+        or_filters = []
+        for w in words:
+            or_filters.append(["item_name", "like", f"%{w}%"])
+            or_filters.append(["item_code", "like", f"%{w}%"])
 
     order_by = "item_name asc"
     if sort == "newest":
         order_by = "creation desc"
 
-    has_price_filter = bool(price_min) or bool(price_max)
+    # Price filtering and search ranking both need to happen in Python
+    # (price lives in a separate doctype; ranking needs to see the whole
+    # matching set, not just one page of it) - so whenever either is
+    # active, fetch a larger candidate batch, process in Python, then
+    # paginate the processed result. Fine at this catalogue size; would be
+    # worth pushing into SQL if the catalogue grows into the tens of thousands.
+    needs_python_processing = bool(search) or bool(price_min) or bool(price_max)
 
-    if has_price_filter:
-        # Price lives in a separate doctype (Item Price), so when a price
-        # filter is active we fetch a larger candidate batch, filter by
-        # price in Python, then paginate the filtered result. Fine at this
-        # catalogue size; if your catalogue grows into the tens of
-        # thousands this would be worth moving into a single SQL join.
+    if needs_python_processing:
         candidates = frappe.get_all(
             "Item",
             filters=filters,
             or_filters=or_filters,
             fields=["item_code", "item_name", "item_group", "image", "stock_uom", "description", "brand"],
             order_by=order_by,
-            limit_page_length=2000,
+            limit_page_length=1000,
         )
         attach_rates(candidates)
+
         pmin = flt(price_min) if price_min else None
         pmax = flt(price_max) if price_max else None
         if pmin is not None:
             candidates = [i for i in candidates if i["rate"] >= pmin]
         if pmax is not None:
             candidates = [i for i in candidates if i["rate"] <= pmax]
+
         if sort == "price_asc":
             candidates.sort(key=lambda i: i["rate"])
         elif sort == "price_desc":
             candidates.sort(key=lambda i: i["rate"], reverse=True)
+
+        if search:
+            # Stable sort on top of whatever ordering is already there:
+            # items containing the FULL search phrase float to the top,
+            # partial word matches follow, in their existing order.
+            search_lower = search.lower()
+            candidates.sort(key=lambda i: 0 if search_lower in (i["item_name"] or "").lower() else 1)
+
         total = len(candidates)
         start = (page - 1) * page_size
         items = candidates[start:start + page_size]
@@ -348,7 +364,40 @@ def place_order(cart_items, customer_details):
 
     so.insert(ignore_permissions=True)
 
+    notify_new_order(so, name, mobile, address_text)
+
     return {"order_id": so.name, "grand_total": so.grand_total, "currency": so.currency}
+
+
+def notify_new_order(so, customer_name, mobile, address_text):
+    """Emails sales@raifacentre.qa when a website order comes in. Uses
+    whatever your default outgoing Email Account already is (you mentioned
+    notification@raifacentre.com is set as default) - nothing new to
+    configure. Wrapped in try/except deliberately: if email sending ever
+    fails (SMTP hiccup, etc.) it must never stop the order itself from
+    being saved - the order already exists in the database by this point,
+    the email is just a heads-up on top of it."""
+    try:
+        item_lines = "".join(
+            f"<tr><td style='padding:4px 10px 4px 0;'>{d.item_code} - {d.item_name}</td>"
+            f"<td style='padding:4px 10px;text-align:right;'>{d.qty} x QAR {d.rate}</td></tr>"
+            for d in so.items
+        )
+        frappe.sendmail(
+            recipients=["sales@raifacentre.qa"],
+            subject=f"New website order {so.name} - QAR {so.grand_total}",
+            message=f"""
+                <p>New Cash on Delivery order placed on the website.</p>
+                <p><b>Order:</b> {so.name}<br>
+                <b>Customer:</b> {frappe.utils.escape_html(customer_name)} ({frappe.utils.escape_html(mobile)})<br>
+                <b>Delivery Address:</b> {frappe.utils.escape_html(address_text)}<br>
+                <b>Total:</b> QAR {so.grand_total}</p>
+                <table style="border-collapse:collapse;">{item_lines}</table>
+                <p>Review and submit the order in ERPNext under Selling &gt; Sales Order.</p>
+            """,
+        )
+    except Exception:
+        frappe.log_error(title="Shop: order notification email failed")
 
 
 @frappe.whitelist()
