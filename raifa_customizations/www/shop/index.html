@@ -115,6 +115,10 @@
   .add-btn svg{width:17px;height:17px;}
 
   .why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .banner-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;}
+  .banner-card{border-radius:var(--radius);overflow:hidden;position:relative;aspect-ratio:16/9;background:var(--brand-soft);display:block;}
+  .banner-card img{width:100%;height:100%;object-fit:cover;}
+  .banner-card .banner-title{position:absolute;left:0;right:0;bottom:0;padding:16px;background:linear-gradient(0deg,rgba(20,22,43,.75),transparent);color:#fff;font-family:var(--font-d);font-weight:600;font-size:15px;}
   .why-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:22px;}
   .why-card .ic{width:38px;height:38px;color:var(--brand);margin-bottom:12px;}
   .why-card h3{font-family:var(--font-d);font-size:16px;margin:0 0 6px;}
@@ -326,7 +330,7 @@
       <p style="max-width:280px;">Stationery, office supplies &amp; printing services in Doha, Qatar since 2012. Barwa Village &amp; Matar Qadeem branches.</p>
     </div>
     <div><h4>Shop</h4><p><a href="#/shop">All Products</a></p><p><a href="#/">Categories</a></p><p><a href="#/cart">Your Cart</a></p></div>
-    <div><h4>Account</h4><p><a href="#/account">Sign In</a></p><p><a href="#/account">Track Order</a></p><p><a href="#/contact">Contact Us</a></p></div>
+    <div><h4>Account</h4><p><a href="#/account">Sign In</a></p><p><a href="#/account">Track Order</a></p><p><a href="#/contact">Contact Us</a></p><p><a href="#/about">About Us</a></p></div>
     <div><h4>Get in Touch</h4><p>Barwa Village &amp; Matar Qadeem, Doha</p><p>Landline: <a href="tel:+97444551082">4455 1082</a></p><p>Stationery WhatsApp: <a href="https://wa.me/97433753565" target="_blank" rel="noopener">3375 3565</a></p><p>Printing WhatsApp: <a href="https://wa.me/97430252262" target="_blank" rel="noopener">3025 2262</a></p></div>
   </div>
   <div class="footer-bottom">© Raifa Centre Trading &amp; Advertising — RC Group</div>
@@ -347,6 +351,7 @@
     user_email: {{ user_email | tojson }},
     user_fullname: {{ user_fullname | tojson }},
     categories: {{ categories | tojson }},
+    banners: {{ banners | tojson }},
     featured: {{ featured_items | tojson }}
   };
 </script>
@@ -599,6 +604,12 @@ function renderHome(){
       <div class="block-head"><h2>Popular right now</h2><a href="#/shop">View all →</a></div>
       <div class="prod-grid">${ctx.featured.map(productCard).join('') || '<p style="color:var(--ink-soft)">No products found — check that items exist in your Stationery item group.</p>'}</div>
     </section>
+    ${ctx.banners.length ? `
+    <section class="block">
+      <div class="banner-grid">
+        ${ctx.banners.map(b=>`<a class="banner-card" href="${b.link_url?escapeHtml(b.link_url):'#/shop'}"><img src="${escapeHtml(b.image)}" alt="${escapeHtml(b.title||'')}" loading="lazy">${b.title?`<span class="banner-title">${escapeHtml(b.title)}</span>`:''}</a>`).join('')}
+      </div>
+    </section>` : ''}
     <section class="block">
       <div class="why-grid">
         <div class="why-card"><svg class="ic"><use href="#ic-truck"/></svg><h3>Fast delivery</h3><p>Same-day delivery for most items, as per availability.</p></div>
@@ -912,6 +923,22 @@ async function placeOrder(){
   }
 }
 
+function renderAbout(){
+  document.getElementById('app').innerHTML = `
+    <div class="crumb"><a href="#/">Home</a> / About Us</div>
+    <h1 style="font-family:var(--font-d);font-size:26px;margin:8px 0 6px;">About Raifa Centre</h1>
+    <div style="max-width:640px;font-size:14.5px;color:var(--ink-soft);line-height:1.8;">
+      <p>Raifa Centre Trading &amp; Advertising has been supplying stationery, office supplies, corporate gifting and printing services across Qatar since 2012.</p>
+      <p>We operate two branches in Doha — Barwa Village and Matar Qadeem — serving thousands of business, school and individual customers with a catalogue of thousands of everyday office and stationery items, alongside custom printing and design services.</p>
+      <p>This website brings that same catalogue online, with cash-on-delivery ordering across Qatar.</p>
+    </div>
+    <div class="trust-strip" style="margin-top:26px;max-width:640px;">
+      <div class="trust-item"><svg><use href="#ic-check"/></svg>Established 2012</div>
+      <div class="trust-item"><svg><use href="#ic-shield"/></svg>Two Doha branches</div>
+      <div class="trust-item"><svg><use href="#ic-truck"/></svg>Delivery all over Qatar</div>
+    </div>
+  `;
+}
 function renderContact(){
   document.getElementById('app').innerHTML = `
     <div class="crumb"><a href="#/">Home</a> / Contact Us</div>
@@ -971,8 +998,12 @@ function renderAccountLoggedOut(tab){
       <div class="form-card" style="grid-column:1/-1;max-width:420px;">
         ${tab==='signin' ? `
           <h3>Sign in to your account</h3>
-          <p style="font-size:13px;color:var(--ink-soft);margin-top:-8px;margin-bottom:16px;">Uses your existing ERPNext login. New here? You can also just check out as a guest — no account needed.</p>
-          <a class="btn btn-primary btn-block" href="/login?redirect-to=${encodeURIComponent('/shop#/account')}">Sign In / Register</a>
+          <p style="font-size:13px;color:var(--ink-soft);margin-top:-8px;margin-bottom:16px;">New here? You can also just check out as a guest — no account needed.</p>
+          <div class="field"><label>Email</label><input id="loginUsr" placeholder="you@example.com"></div>
+          <div class="field"><label>Password</label><input id="loginPwd" type="password" placeholder="••••••••"></div>
+          <div class="field-error" id="loginError"></div>
+          <button class="btn btn-primary btn-block" id="loginBtn" onclick="doLogin()">Sign In</button>
+          <a href="/login" style="display:block;text-align:center;font-size:12px;color:var(--ink-soft);margin-top:12px;">Forgot your password?</a>
         ` : `
           <h3>Track your order</h3>
           <div class="field"><label>Mobile number used at checkout</label><input id="trackMobile" placeholder="+974 5xxx xxxx"></div>
@@ -982,6 +1013,42 @@ function renderAccountLoggedOut(tab){
       </div>
     </div>
   `;
+}
+async function doLogin(){
+  const usr = document.getElementById('loginUsr').value.trim();
+  const pwd = document.getElementById('loginPwd').value;
+  const errBox = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+  if(!usr || !pwd){
+    errBox.textContent = 'Please enter both email and password.';
+    errBox.classList.add('show');
+    return;
+  }
+  errBox.classList.remove('show');
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try{
+    const params = new URLSearchParams();
+    params.set('usr', usr);
+    params.set('pwd', pwd);
+    const res = await fetch('/api/method/login', {
+      method: 'POST',
+      headers: {'Content-Type':'application/x-www-form-urlencoded', 'X-Frappe-CSRF-Token': ctx.csrf_token},
+      body: params.toString()
+    });
+    const data = await res.json();
+    if(!res.ok || data.message !== 'Logged In'){
+      throw new Error('bad credentials');
+    }
+    // Full reload so the server re-renders the page with the new logged-in
+    // session (is_logged_in / user_email / user_fullname all come from
+    // get_context() on page load, so this is the simplest reliable way to
+    // pick up the new state). The #/account hash carries through the reload.
+    location.reload();
+  }catch(e){
+    btn.disabled = false; btn.textContent = 'Sign In';
+    errBox.textContent = 'Incorrect email or password.';
+    errBox.classList.add('show');
+  }
 }
 async function lookupOrdersByMobile(){
   const mobile = document.getElementById('trackMobile').value.trim();
@@ -1045,6 +1112,7 @@ function router(){
   else if(seg[0]==='checkout'){ renderCheckout(); }
   else if(seg[0]==='account'){ renderAccount(); }
   else if(seg[0]==='contact'){ renderContact(); }
+  else if(seg[0]==='about'){ renderAbout(); }
   else{ renderHome(); }
   window.scrollTo({top:0,behavior:'instant'});
 }
