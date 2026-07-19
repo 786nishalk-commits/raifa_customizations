@@ -389,6 +389,17 @@ async function apiPost(method, body){
 /* ---------- cart (persisted in localStorage - this is a real deployed
    site, not a Claude preview, so localStorage is the right tool here) ---------- */
 let cart = [];
+let productLookup = {}; // item_code -> item data, populated as cards render, so onclick handlers
+                         // can pass just a safe encoded code instead of embedding raw item text
+                         // (which could contain quote characters and break the HTML attribute)
+function addToCartByCode(code, qty){
+  const item = productLookup[decodeURIComponent(code)];
+  if(item) addToCart(item, qty);
+}
+function openModalByCode(code){
+  const item = productLookup[decodeURIComponent(code)];
+  if(item) openModal(item);
+}
 try { cart = JSON.parse(localStorage.getItem('raifa_shop_cart') || '[]'); } catch(e){ cart = []; }
 function saveCart(){ try{ localStorage.setItem('raifa_shop_cart', JSON.stringify(cart)); }catch(e){} }
 
@@ -500,7 +511,7 @@ function openModal(item){
           </div>
         </div>
         <div class="pd-actions" style="margin-top:6px;">
-          <button class="btn btn-accent" onclick='addToCart(${JSON.stringify(item)}, parseInt(document.getElementById("modalQtyInput").value)); closeModal();'><svg style="width:16px;height:16px"><use href="#ic-cart"/></svg>Add to Cart</button>
+          <button class="btn btn-accent" onclick="addToCartByCode('${encodeURIComponent(item.item_code)}', parseInt(document.getElementById('modalQtyInput').value)); closeModal();"><svg style="width:16px;height:16px"><use href="#ic-cart"/></svg>Add to Cart</button>
           <button class="btn btn-outline" onclick="closeModal();go('/product/${encodeURIComponent(item.item_code)}')">Full details</button>
         </div>
       </div>
@@ -522,17 +533,18 @@ function catFilterOpt(c, activeCat){
   return `<label class="filter-opt"><input type="radio" name="catf" ${activeCat===c.name?'checked':''} onchange="go(buildShopUrl({cat:'${encodeURIComponent(c.name)}'}))"> ${escapeHtml(c.item_group_name||c.name)}</label>`;
 }
 function productCard(p){
+  productLookup[p.item_code] = p;
   return `<div class="prod-card">
     <div class="prod-img" onclick="go('/product/${encodeURIComponent(p.item_code)}')">
       ${thumbHtml(p)}
-      <button class="qv-btn" onclick='event.stopPropagation();openModal(${JSON.stringify(p)})'><svg><use href="#ic-eye"/></svg>Quick view</button>
+      <button class="qv-btn" onclick="event.stopPropagation();openModalByCode('${encodeURIComponent(p.item_code)}')"><svg><use href="#ic-eye"/></svg>Quick view</button>
     </div>
     <div class="prod-body">
       <div class="prod-name" onclick="go('/product/${encodeURIComponent(p.item_code)}')">${escapeHtml(p.item_name)}</div>
       <div class="prod-meta">${escapeHtml(p.item_group||'')} · ${escapeHtml(p.stock_uom||'Pcs')}</div>
       <div class="prod-bottom">
         <span class="prod-price">${qar(p.rate)}</span>
-        <button class="add-btn" title="Add to cart" onclick='addToCart(${JSON.stringify(p)},1)'><svg><use href="#ic-cart"/></svg></button>
+        <button class="add-btn" title="Add to cart" onclick="addToCartByCode('${encodeURIComponent(p.item_code)}',1)"><svg><use href="#ic-cart"/></svg></button>
       </div>
     </div>
   </div>`;
@@ -578,7 +590,10 @@ function renderHome(){
       <div class="cat-grid" id="homeCatGrid">
         ${ctx.categories.slice(0,8).map(catTile).join('')}
       </div>
-      ${ctx.categories.length>8 ? `<button class="btn btn-outline" style="margin-top:14px;" onclick="document.getElementById('homeCatGrid').innerHTML+=${JSON.stringify(ctx.categories.slice(8).map(catTile).join(''))};this.remove();">View all categories (${ctx.categories.length})</button>` : ''}
+      <div class="cat-grid" id="homeCatGridHidden" style="display:none;margin-top:14px;">
+        ${ctx.categories.slice(8).map(catTile).join('')}
+      </div>
+      ${ctx.categories.length>8 ? `<button class="btn btn-outline" style="margin-top:14px;" onclick="document.getElementById('homeCatGridHidden').style.display='grid';this.remove();">View all categories (${ctx.categories.length})</button>` : ''}
     </section>
     <section class="block">
       <div class="block-head"><h2>Popular right now</h2><a href="#/shop">View all →</a></div>
@@ -713,6 +728,7 @@ async function renderProduct(itemCode){
   try{
     const result = await apiGet('get_product', {item_code: itemCode});
     const p = result.item;
+    productLookup[p.item_code] = p;
     const related = result.related || [];
     document.getElementById('app').innerHTML = `
       <div class="crumb"><a href="#/">Home</a> / <a href="#/shop?cat=${encodeURIComponent(p.item_group)}">${escapeHtml(p.item_group)}</a> / ${escapeHtml(p.item_name)}</div>
@@ -729,8 +745,8 @@ async function renderProduct(itemCode){
             <span style="font-size:13px;color:var(--ink-soft)">${escapeHtml(p.stock_uom||'Pcs')}</span>
           </div>
           <div class="pd-actions">
-            <button class="btn btn-accent" onclick='addToCart(${JSON.stringify(p)}, parseInt(document.getElementById("pdQtyInput").value))'><svg style="width:16px;height:16px"><use href="#ic-cart"/></svg>Add to Cart</button>
-            <button class="btn btn-primary" onclick='addToCart(${JSON.stringify(p)}, parseInt(document.getElementById("pdQtyInput").value));go("/checkout")'>Buy Now</button>
+            <button class="btn btn-accent" onclick="addToCartByCode('${encodeURIComponent(p.item_code)}', parseInt(document.getElementById('pdQtyInput').value))"><svg style="width:16px;height:16px"><use href="#ic-cart"/></svg>Add to Cart</button>
+            <button class="btn btn-primary" onclick="addToCartByCode('${encodeURIComponent(p.item_code)}', parseInt(document.getElementById('pdQtyInput').value));go('/checkout')">Buy Now</button>
           </div>
           ${p.description ? `<div class="pd-desc">${p.description}</div>` : ''}
         </div>
