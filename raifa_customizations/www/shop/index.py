@@ -18,10 +18,29 @@ def get_context(context):
     context.no_cache = 1
     context.categories = get_categories()
     context.featured_items = get_featured_items()
+    context.banners = get_banners()
     context.is_logged_in = 1 if frappe.session.user != "Guest" else 0
     context.user_email = frappe.session.user if frappe.session.user != "Guest" else ""
     context.user_fullname = frappe.utils.get_fullname(frappe.session.user) if frappe.session.user != "Guest" else ""
     return context
+
+
+def get_banners():
+    """Homepage promotional banners. Reads from a "Shop Banner" doctype
+    that you create yourself via the ERPNext UI (Setup > DocType > New) -
+    no code change or deploy needed on your end. Add fields: title (Data),
+    image (Attach Image), link_url (Data, optional), sort_order (Int),
+    is_active (Check). Returns an empty list gracefully if you haven't
+    created it yet, so nothing breaks in the meantime."""
+    if not frappe.db.exists("DocType", "Shop Banner"):
+        return []
+    return frappe.get_all(
+        "Shop Banner",
+        filters={"is_active": 1},
+        fields=["title", "image", "link_url"],
+        order_by="sort_order asc",
+        limit_page_length=10,
+    )
 
 
 def get_categories():
@@ -46,13 +65,40 @@ def get_categories():
     return groups
 
 
+FEATURED_ITEM_COUNT = 32
+
+
 def get_featured_items():
-    items = frappe.get_all(
-        "Item",
-        filters={"item_group": ["in", get_stationery_item_groups()], "disabled": 0},
-        fields=["item_code", "item_name", "item_group", "image", "stock_uom"],
-        order_by="modified desc",
-        limit_page_length=8,
-    )
+    """Homepage "Popular right now" items. If you add a Check field called
+    custom_show_on_homepage to the Item doctype (Customize Form), items you
+    tick there are shown first - tick/untick any time, no code or deploy
+    needed. Until you've flagged anything (or if you never add the field at
+    all), this just falls back to your most recently modified items, so it
+    always has something sensible to show."""
+    filters = {"item_group": ["in", get_stationery_item_groups()], "disabled": 0}
+    fields = ["item_code", "item_name", "item_group", "image", "stock_uom"]
+
+    items = []
+    meta = frappe.get_meta("Item")
+    if meta.has_field("custom_show_on_homepage"):
+        featured_filters = dict(filters)
+        featured_filters["custom_show_on_homepage"] = 1
+        items = frappe.get_all(
+            "Item", filters=featured_filters, fields=fields,
+            order_by="modified desc", limit_page_length=FEATURED_ITEM_COUNT,
+        )
+
+    if len(items) < FEATURED_ITEM_COUNT:
+        existing_codes = {i["item_code"] for i in items}
+        fallback = frappe.get_all(
+            "Item", filters=filters, fields=fields,
+            order_by="modified desc", limit_page_length=FEATURED_ITEM_COUNT + len(items),
+        )
+        for f in fallback:
+            if f["item_code"] not in existing_codes:
+                items.append(f)
+            if len(items) >= FEATURED_ITEM_COUNT:
+                break
+
     attach_rates(items)
     return items
