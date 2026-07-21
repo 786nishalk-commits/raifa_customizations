@@ -87,6 +87,7 @@
   .block-head a{font-size:13.5px;font-weight:600;color:var(--brand);}
 
   .cat-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;}
+  .cat-hidden{display:none;}
   .cat-tile{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 12px;text-align:center;transition:transform .12s ease,border-color .12s ease;}
   .cat-tile:hover{transform:translateY(-3px);border-color:var(--brand);}
   .cat-tile .ic{width:44px;height:44px;background:var(--brand-soft);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;color:var(--brand);overflow:hidden;}
@@ -116,6 +117,12 @@
 
   .why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
   .banner-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;}
+  .brand-strip{overflow:hidden;position:relative;padding:8px 0;}
+  .brand-track{display:flex;gap:48px;width:max-content;animation:brandscroll 40s linear infinite;align-items:center;}
+  .brand-strip:hover .brand-track{animation-play-state:paused;}
+  .brand-logo{height:46px;width:auto;object-fit:contain;filter:grayscale(1);opacity:.7;transition:filter .2s,opacity .2s;cursor:pointer;}
+  .brand-logo:hover{filter:grayscale(0);opacity:1;}
+  @keyframes brandscroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
   .banner-card{border-radius:var(--radius);overflow:hidden;position:relative;aspect-ratio:16/9;background:var(--brand-soft);display:block;}
   .banner-card img{width:100%;height:100%;object-fit:cover;}
   .banner-card .banner-title{position:absolute;left:0;right:0;bottom:0;padding:16px;background:linear-gradient(0deg,rgba(20,22,43,.75),transparent);color:#fff;font-family:var(--font-d);font-weight:600;font-size:15px;}
@@ -249,7 +256,8 @@
   .wa-float svg{width:27px;height:27px;}
 
   @media (max-width:860px){
-    .search-wrap{display:none;}
+    .search-wrap{order:3;flex:1 1 100%;max-width:100%;margin-top:10px;}
+    .nav-top{flex-wrap:wrap;}
     .cat-grid{grid-template-columns:repeat(3,1fr);}
     .prod-grid{grid-template-columns:repeat(2,1fr);}
     .why-grid{grid-template-columns:1fr;}
@@ -286,6 +294,20 @@
   <symbol id="ic-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></symbol>
   <symbol id="ic-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="ic-wa" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.6.1-.2.3-.7.9-.9 1-.2.2-.3.2-.6.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.6-2.1-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.1.2-.3.2-.4.1-.2 0-.3 0-.5C10 9 9.4 7.6 9.2 7c-.2-.5-.4-.5-.6-.5h-.5c-.2 0-.5.1-.7.3-.2.3-1 1-1 2.3 0 1.4 1 2.7 1.1 2.9.1.2 2 3 4.8 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.3.2-.7.2-1.2.2-1.3-.1-.2-.3-.2-.6-.4z"/><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2z"/></symbol>
+  <symbol id="ic-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3a9 9 0 1 0 0 18c1 0 2-.5 2-1.5S13.5 18 13 17c-.5-1 .5-2 1.5-2H17a4 4 0 0 0 4-4c0-4.5-4-7-9-7z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="9.5" cy="7.3" r="1"/><circle cx="14.5" cy="7" r="1"/></symbol>
+  <symbol id="ic-board" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="18" rx="1"/><path d="M9 2V1a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M8 8h8M8 12h8M8 16h5"/></symbol>
+  <symbol id="ic-spray" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 8V4a1 1 0 0 1 1-1h1"/><path d="M13 3l3-2M14 4l2 1"/><rect x="7" y="8" width="8" height="14" rx="2"/><path d="M9 12h4M9 15h4"/></symbol>
+  <symbol id="ic-glue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 2h6v4l2 2v14H7V8l2-2V2z"/><path d="M9 2h6"/></symbol>
+  <symbol id="ic-idcard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v4"/><circle cx="12" cy="8" r="2"/><rect x="6" y="10" width="12" height="12" rx="2"/><circle cx="12" cy="15" r="2"/><path d="M9 20h6"/></symbol>
+  <symbol id="ic-chip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="6" width="12" height="12" rx="1"/><path d="M9 6V3M12 6V3M15 6V3M9 21v-3M12 21v-3M15 21v-3M6 9H3M6 12H3M6 15H3M21 9h-3M21 12h-3M21 15h-3"/></symbol>
+  <symbol id="ic-costume" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3L4 6v4h3v11h10V10h3V6l-4-3-2 2h-4l-2-2z"/></symbol>
+  <symbol id="ic-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></symbol>
+  <symbol id="ic-cabinet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="1"/><path d="M5 9h14M5 15h14"/><path d="M9 5.5h2M9 12h2M9 18h2"/></symbol>
+  <symbol id="ic-pantry" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 8h11v8a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8z"/><path d="M16 10h2a2 2 0 0 1 0 4h-2"/><path d="M8 4v2M11 4v2M14 4v2"/></symbol>
+  <symbol id="ic-gift" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="9" width="16" height="12" rx="1"/><path d="M4 13h16"/><path d="M12 9v12"/><path d="M12 9c-2 0-3-1.5-3-3s1-3 3-3 1 3 0 3z"/><path d="M12 9c2 0 3-1.5 3-3s-1-3-3-3-1 3 0 3z"/></symbol>
+  <symbol id="ic-stamp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="14" width="10" height="6" rx="1"/><path d="M9 14V9a3 3 0 0 1 6 0v5"/><path d="M10 20v2h4v-2"/></symbol>
+  <symbol id="ic-bag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 8V6a5 5 0 0 1 10 0v2"/><rect x="5" y="8" width="14" height="13" rx="2"/><path d="M9 12h6M9 16h6"/></symbol>
+  <symbol id="ic-stapler" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 16l2-8h14l2 8z"/><path d="M3 16h18v3H3z"/><path d="M9 8V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></symbol>
 </svg>
 
 <div class="corp-bar"><svg><use href="#ic-cash"/></svg>For corporate enquiries &amp; bulk orders, contact us at <a href="mailto:sales@raifacentre.qa">sales@raifacentre.qa</a></div>
@@ -352,6 +374,7 @@
     user_fullname: {{ user_fullname | tojson }},
     categories: {{ categories | tojson }},
     banners: {{ banners | tojson }},
+    brands: {{ featured_brands | tojson }},
     featured: {{ featured_items | tojson }}
   };
 </script>
@@ -413,6 +436,34 @@ function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':
 function cartCount(){ return cart.reduce((s,i)=>s+i.qty,0); }
 function cartTotal(){ return cart.reduce((s,i)=>s+i.qty*i.rate,0); }
 
+const CATEGORY_ICON_MAP = {
+  'ART & CRAFT': 'ic-palette',
+  'BOARDS AND ACCESSORIES': 'ic-board',
+  'CALCULATOR': 'ic-calc',
+  'CLEANING ITEMS': 'ic-spray',
+  'FILES & FOLDERS': 'ic-folder',
+  'GLUES & ADHESIVE': 'ic-glue',
+  'ID CARD & LANYARDS': 'ic-idcard',
+  'IT ITEMS': 'ic-chip',
+  'KIDS COSTUME': 'ic-costume',
+  'MOBILE & ACCESSORIES': 'ic-phone',
+  'OFFICE EQUIPMENTS': 'ic-printer',
+  'OFFICE FURNITURE': 'ic-cabinet',
+  'OTHER STATIONERY ITEM': 'ic-pen',
+  'PANTRY ITEMS': 'ic-pantry',
+  'PAPER': 'ic-notebook',
+  'PARTY ITEMS': 'ic-gift',
+  'PRINTERS & TONERS': 'ic-printer',
+  'READY MADE STAMPS': 'ic-stamp',
+  'SCHOOL BAGS & ACCESSORIES': 'ic-bag',
+  'STAPLES & PUNCHES': 'ic-stapler',
+  'STATIONERY ITEM': 'ic-pen',
+  'WRITING & MARKING': 'ic-marker',
+};
+function categoryIcon(name){
+  const key = (name||'').toUpperCase().trim();
+  return CATEGORY_ICON_MAP[key] || guessIcon(name);
+}
 function guessIcon(name){
   name = (name||'').toLowerCase();
   if(/marker|highlighter/.test(name)) return 'ic-marker';
@@ -531,11 +582,12 @@ function renderCatBar(){
   document.getElementById('catBar').innerHTML = ['<a href="#/shop" class="cat-link">All Products</a>']
     .concat(ctx.categories.map(c=>`<a href="#/shop?cat=${encodeURIComponent(c.name)}" class="cat-link">${escapeHtml(c.item_group_name||c.name)}</a>`)).join('');
 }
-function catTile(c){
-  return `<a href="#/shop?cat=${encodeURIComponent(c.name)}" class="cat-tile"><div class="ic">${c.image?('<img src="'+escapeHtml(c.image)+'">'):('<svg><use href="#'+guessIcon(c.item_group_name||c.name)+'"/></svg>')}</div><span>${escapeHtml(c.item_group_name||c.name)}</span></a>`;
+function catTile(c, hidden){
+  return `<a href="#/shop?cat=${encodeURIComponent(c.name)}" class="cat-tile${hidden?' cat-hidden':''}"><div class="ic"><svg><use href="#${categoryIcon(c.item_group_name||c.name)}"/></svg></div><span>${escapeHtml(c.item_group_name||c.name)}</span></a>`;
 }
 function catFilterOpt(c, activeCat){
-  return `<label class="filter-opt"><input type="radio" name="catf" ${activeCat===c.name?'checked':''} onchange="go(buildShopUrl({cat:'${encodeURIComponent(c.name)}'}))"> ${escapeHtml(c.item_group_name||c.name)}</label>`;
+  const idx = ctx.categories.indexOf(c);
+  return `<label class="filter-opt"><input type="radio" name="catf" ${activeCat===c.name?'checked':''} onchange="go(buildShopUrl({cat: ctx.categories[${idx}].name}))"> ${escapeHtml(c.item_group_name||c.name)}</label>`;
 }
 function productCard(p){
   productLookup[p.item_code] = p;
@@ -576,11 +628,11 @@ function renderHome(){
     <section class="hero">
       <div class="hero-content">
         <span class="hero-eyebrow">Barwa Village · Matar Qadeem · Doha</span>
-        <h1>Everything on your <span class="hl">supply list</span>, delivered same week.</h1>
-        <p>Real stock, real prices, and cash-on-delivery across Doha — the way Raifa Centre has supplied Qatar businesses and schools since 2012.</p>
+        <h1>Qatar's partner for <span class="hl">printing &amp; stationery</span> since 2012.</h1>
+        <p>Trusted by businesses and schools across Qatar for quality stationery, office supplies and professional printing — at the right price, delivered to your door.</p>
         <div class="hero-ctas">
-          <button class="btn btn-accent" onclick="go('/shop')">Shop Stationery</button>
-          <button class="btn btn-ghost" onclick="go('/account')">Track an Order</button>
+          <button class="btn btn-accent" onclick="go('/shop')">Stationery Items</button>
+          <button class="btn btn-ghost" onclick="go('/printing')">Printing Items</button>
         </div>
       </div>
     </section>
@@ -593,12 +645,9 @@ function renderHome(){
     <section class="block">
       <div class="block-head"><h2>Shop by <span class="hl">category</span></h2></div>
       <div class="cat-grid" id="homeCatGrid">
-        ${ctx.categories.slice(0,8).map(catTile).join('')}
+        ${ctx.categories.map((c,i)=>catTile(c, i>=8)).join('')}
       </div>
-      <div class="cat-grid" id="homeCatGridHidden" style="display:none;margin-top:14px;">
-        ${ctx.categories.slice(8).map(catTile).join('')}
-      </div>
-      ${ctx.categories.length>8 ? `<button class="btn btn-outline" style="margin-top:14px;" onclick="document.getElementById('homeCatGridHidden').style.display='grid';this.remove();">View all categories (${ctx.categories.length})</button>` : ''}
+      ${ctx.categories.length>8 ? `<button class="btn btn-outline" style="margin-top:14px;" onclick="document.querySelectorAll('#homeCatGrid .cat-hidden').forEach(el=>el.classList.remove('cat-hidden'));this.remove();">View all categories (${ctx.categories.length})</button>` : ''}
     </section>
     <section class="block">
       <div class="block-head"><h2>Popular right now</h2><a href="#/shop">View all →</a></div>
@@ -608,6 +657,15 @@ function renderHome(){
     <section class="block">
       <div class="banner-grid">
         ${ctx.banners.map(b=>`<a class="banner-card" href="${b.link_url?escapeHtml(b.link_url):'#/shop'}"><img src="${escapeHtml(b.image)}" alt="${escapeHtml(b.title||'')}" loading="lazy">${b.title?`<span class="banner-title">${escapeHtml(b.title)}</span>`:''}</a>`).join('')}
+      </div>
+    </section>` : ''}
+    ${ctx.brands.length ? `
+    <section class="block">
+      <div class="block-head"><h2>Our <span class="hl">brands</span></h2></div>
+      <div class="brand-strip">
+        <div class="brand-track">
+          ${ctx.brands.concat(ctx.brands).map(b=>`<img class="brand-logo" src="${escapeHtml(b.logo)}" alt="${escapeHtml(b.brand_name||'')}" title="${escapeHtml(b.brand_name||'')}" onclick="go('/shop?brand='+encodeURIComponent('${escapeHtml(b.brand_name||'')}'))">`).join('')}
+        </div>
       </div>
     </section>` : ''}
     <section class="block">
@@ -923,6 +981,25 @@ async function placeOrder(){
   }
 }
 
+function renderPrinting(){
+  document.getElementById('app').innerHTML = `
+    <div class="crumb"><a href="#/">Home</a> / Printing Services</div>
+    <section class="hero" style="margin-top:14px;">
+      <div class="hero-content">
+        <span class="hero-eyebrow">Corporate &amp; Bulk Printing</span>
+        <h1>Professional <span class="hl">printing services</span> for your business.</h1>
+        <p>Business cards, flyers, banners, corporate gifting, custom printing and more. Send us your requirement and our team will prepare a quotation for you.</p>
+        <div class="hero-ctas">
+          <a class="btn btn-accent" href="https://wa.me/97430252262" target="_blank" rel="noopener"><svg style="width:16px;height:16px"><use href="#ic-wa"/></svg>WhatsApp Printing Team</a>
+          <a class="btn btn-ghost" href="mailto:sales@raifacentre.qa?subject=Printing%20Enquiry">Email an Enquiry</a>
+        </div>
+      </div>
+    </section>
+    <div style="max-width:640px;font-size:14.5px;color:var(--ink-soft);line-height:1.8;margin-top:8px;">
+      <p>A full online printing catalogue with instant quote requests is coming soon. In the meantime, reach our printing team directly on WhatsApp at <a href="https://wa.me/97430252262" target="_blank" rel="noopener" style="color:var(--brand);font-weight:600;">+974 3025 2262</a> or email <a href="mailto:sales@raifacentre.qa" style="color:var(--brand);font-weight:600;">sales@raifacentre.qa</a> — we respond fast.</p>
+    </div>
+  `;
+}
 function renderAbout(){
   document.getElementById('app').innerHTML = `
     <div class="crumb"><a href="#/">Home</a> / About Us</div>
@@ -1113,6 +1190,7 @@ function router(){
   else if(seg[0]==='account'){ renderAccount(); }
   else if(seg[0]==='contact'){ renderContact(); }
   else if(seg[0]==='about'){ renderAbout(); }
+  else if(seg[0]==='printing'){ renderPrinting(); }
   else{ renderHome(); }
   window.scrollTo({top:0,behavior:'instant'});
 }

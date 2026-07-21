@@ -19,10 +19,28 @@ def get_context(context):
     context.categories = get_categories()
     context.featured_items = get_featured_items()
     context.banners = get_banners()
+    context.featured_brands = get_featured_brands()
     context.is_logged_in = 1 if frappe.session.user != "Guest" else 0
     context.user_email = frappe.session.user if frappe.session.user != "Guest" else ""
     context.user_fullname = frappe.utils.get_fullname(frappe.session.user) if frappe.session.user != "Guest" else ""
     return context
+
+
+def get_featured_brands():
+    """Homepage brand logo strip. Create a "Shop Brand" doctype yourself
+    (Setup > DocType > New) with fields: brand_name (Data - must match the
+    Brand name used on your Items exactly, so clicking filters correctly),
+    logo (Attach Image), sort_order (Int), is_active (Check). Returns empty
+    gracefully until you create it, so nothing breaks in the meantime."""
+    if not frappe.db.exists("DocType", "Shop Brand"):
+        return []
+    return frappe.get_all(
+        "Shop Brand",
+        filters={"is_active": 1},
+        fields=["brand_name", "logo"],
+        order_by="sort_order asc",
+        limit_page_length=30,
+    )
 
 
 def get_banners():
@@ -44,11 +62,22 @@ def get_banners():
 
 
 def get_categories():
+    meta = frappe.get_meta("Item Group")
+    order_by = "item_group_name asc"
+    fields = ["name", "item_group_name"]
+    if meta.has_field("custom_display_order"):
+        # Lower numbers show first. Anything left at the default (set the
+        # field's Default to 9999 when you create it) just falls back to
+        # alphabetical order automatically - so you only need to set a
+        # number on the categories you actually want to prioritize.
+        order_by = "custom_display_order asc, item_group_name asc"
+        fields.append("custom_display_order")
+
     groups = frappe.get_all(
         "Item Group",
         filters={"parent_item_group": STATIONERY_ROOT_ITEM_GROUP},
-        fields=["name", "item_group_name"],
-        order_by="item_group_name asc",
+        fields=fields,
+        order_by=order_by,
         limit_page_length=200,  # categories are admin-controlled, safe to fetch all rather than cap at a small number
     )
     if not groups:
@@ -57,11 +86,6 @@ def get_categories():
         # still has something to display.
         groups = [{"name": STATIONERY_ROOT_ITEM_GROUP, "item_group_name": STATIONERY_ROOT_ITEM_GROUP}]
 
-    for g in groups:
-        # Best-effort category thumbnail: first item image found in that group
-        g["image"] = frappe.db.get_value(
-            "Item", {"item_group": g["name"], "image": ["is", "set"], "disabled": 0}, "image"
-        )
     return groups
 
 
@@ -75,7 +99,9 @@ def get_featured_items():
     needed. Until you've flagged anything (or if you never add the field at
     all), this just falls back to your most recently modified items, so it
     always has something sensible to show."""
-    filters = {"item_group": ["in", get_stationery_item_groups()], "disabled": 0}
+    from raifa_customizations.api.shop import base_item_filters
+    filters = base_item_filters()
+    filters["item_group"] = ["in", get_stationery_item_groups()]
     fields = ["item_code", "item_name", "item_group", "image", "stock_uom"]
 
     items = []
