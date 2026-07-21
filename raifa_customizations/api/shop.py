@@ -40,6 +40,20 @@ DELIVERY_LEAD_DAYS = 2
 # Helpers (not whitelisted — internal use only)
 # ---------------------------------------------------------------------------
 
+def base_item_filters():
+    """Standard filters applied everywhere the storefront queries Item:
+    not disabled, and - if you've added the field - only items you've
+    actually ticked to show on the website. Add a Check field called
+    custom_show_in_webshop to Item (default: 1, so all your existing items
+    keep showing exactly as they do now). Untick it on items you only
+    create for internal quoting, and they'll stop appearing on the shop
+    without needing any code change."""
+    filters = {"disabled": 0}
+    if frappe.get_meta("Item").has_field("custom_show_in_webshop"):
+        filters["custom_show_in_webshop"] = 1
+    return filters
+
+
 def get_stationery_item_groups():
     """Root group + any direct child groups. If you don't use sub-groups at
     all, this just returns the root group on its own, which is fine."""
@@ -133,7 +147,8 @@ def get_products(item_group=None, search=None, sort="name_asc", page=1, page_siz
     page_size = min(cint(page_size) or 24, 60)
 
     valid_groups = get_stationery_item_groups()
-    filters = {"disabled": 0, "item_group": ["in", valid_groups]}
+    filters = base_item_filters()
+    filters["item_group"] = ["in", valid_groups]
     if item_group and item_group in valid_groups:
         filters["item_group"] = item_group
 
@@ -230,9 +245,12 @@ def get_brands():
     your catalogue - the frontend hides the filter automatically in that
     case rather than showing an empty section."""
     valid_groups = get_stationery_item_groups()
+    brand_filters = base_item_filters()
+    brand_filters["item_group"] = ["in", valid_groups]
+    brand_filters["brand"] = ["is", "set"]
     brands = frappe.get_all(
         "Item",
-        filters={"item_group": ["in", valid_groups], "disabled": 0, "brand": ["is", "set"]},
+        filters=brand_filters,
         pluck="brand",
         distinct=True,
         order_by="brand asc",
@@ -245,9 +263,12 @@ def get_brands():
 def get_product(item_code):
     """Single product detail + up to 4 related items from the same group."""
     valid_groups = get_stationery_item_groups()
+    item_filters = base_item_filters()
+    item_filters["item_code"] = item_code
+    item_filters["item_group"] = ["in", valid_groups]
     item = frappe.db.get_value(
         "Item",
-        {"item_code": item_code, "disabled": 0, "item_group": ["in", valid_groups]},
+        item_filters,
         ["item_code", "item_name", "item_group", "description", "image", "stock_uom"],
         as_dict=True,
     )
@@ -256,9 +277,12 @@ def get_product(item_code):
 
     attach_rates([item])
 
+    related_filters = base_item_filters()
+    related_filters["item_group"] = item.item_group
+    related_filters["item_code"] = ["!=", item_code]
     related = frappe.get_all(
         "Item",
-        filters={"item_group": item.item_group, "disabled": 0, "item_code": ["!=", item_code]},
+        filters=related_filters,
         fields=["item_code", "item_name", "image", "stock_uom"],
         limit_page_length=4,
     )
@@ -323,9 +347,10 @@ def place_order(cart_items, customer_details):
         qty = flt(line.get("qty") or 0)
         if not item_code or qty <= 0:
             continue
-        if not frappe.db.exists(
-            "Item", {"item_code": item_code, "disabled": 0, "item_group": ["in", valid_groups]}
-        ):
+        order_check = base_item_filters()
+        order_check["item_code"] = item_code
+        order_check["item_group"] = ["in", valid_groups]
+        if not frappe.db.exists("Item", order_check):
             continue
         # Server-side price lookup - the rate shown in the browser is never
         # trusted directly, so editing the page can't change what's charged.
