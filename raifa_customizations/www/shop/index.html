@@ -323,6 +323,10 @@
     </div>
     <div class="nav-actions">
       <button class="icon-btn" onclick="go('/account')"><svg><use href="#ic-user"/></svg>Account</button>
+      <button class="icon-btn" onclick="go('/printing')">
+        <svg><use href="#ic-printer"/></svg>Quote
+        <span class="cart-badge" id="quoteBadge" style="display:none">0</span>
+      </button>
       <button class="icon-btn" onclick="openDrawer()">
         <svg><use href="#ic-cart"/></svg>Cart
         <span class="cart-badge" id="cartBadge" style="display:none">0</span>
@@ -430,6 +434,42 @@ function openModalByCode(code){
 }
 try { cart = JSON.parse(localStorage.getItem('raifa_shop_cart') || '[]'); } catch(e){ cart = []; }
 function saveCart(){ try{ localStorage.setItem('raifa_shop_cart', JSON.stringify(cart)); }catch(e){} }
+
+// Quote list — printing items only, entirely separate from the shopping cart.
+let quote = [];
+try { quote = JSON.parse(localStorage.getItem('raifa_quote_list') || '[]'); } catch(e){ quote = []; }
+function saveQuote(){ try{ localStorage.setItem('raifa_quote_list', JSON.stringify(quote)); }catch(e){} }
+let printingLookup = {}; // separate lookup so printing items never collide with shop items
+function addToQuoteByCode(code, qty){
+  const item = printingLookup[decodeURIComponent(code)];
+  if(item) addToQuote(item, qty);
+}
+function addToQuote(item, qty){
+  qty = qty || 1;
+  const existing = quote.find(i=>i.item_code===item.item_code);
+  if(existing){ existing.qty += qty; }
+  else{ quote.push({item_code:item.item_code, item_name:item.item_name, image:item.image, stock_uom:item.stock_uom, qty:qty}); }
+  saveQuote(); renderQuoteBadge();
+  showToast((item.item_name||'').slice(0,26) + ((item.item_name||'').length>26?'…':'') + ' added to quote');
+  if((location.hash||'').startsWith('#/printing')) { /* refresh quote panel if visible */ const qp=document.getElementById('quotePanel'); if(qp) renderQuotePanel(); }
+}
+function setQuoteQty(code, qty){
+  qty = Math.max(0, qty);
+  const line = quote.find(i=>i.item_code===code);
+  if(!line) return;
+  if(qty===0){ quote = quote.filter(i=>i.item_code!==code); }
+  else{ line.qty = qty; }
+  saveQuote(); renderQuoteBadge();
+  const qp=document.getElementById('quotePanel'); if(qp) renderQuotePanel();
+}
+function quoteCount(){ return quote.reduce((s,i)=>s+i.qty,0); }
+function renderQuoteBadge(){
+  const b = document.getElementById('quoteBadge');
+  if(!b) return;
+  const n = quoteCount();
+  b.style.display = n>0 ? 'flex':'none';
+  b.textContent = n;
+}
 
 function qar(n){ return 'QAR ' + Number(n||0).toFixed(2); }
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
@@ -981,24 +1021,189 @@ async function placeOrder(){
   }
 }
 
-function renderPrinting(){
+let printingReqId = 0;
+async function renderPrinting(params){
+  params = params || new URLSearchParams();
+  const activeCat = params.get('cat') || '';
+  const q = params.get('q') || '';
+  const page = parseInt(params.get('page')||'1');
+
   document.getElementById('app').innerHTML = `
-    <div class="crumb"><a href="#/">Home</a> / Printing Services</div>
     <section class="hero" style="margin-top:14px;">
       <div class="hero-content">
         <span class="hero-eyebrow">Corporate &amp; Bulk Printing</span>
         <h1>Professional <span class="hl">printing services</span> for your business.</h1>
-        <p>Business cards, flyers, banners, corporate gifting, custom printing and more. Send us your requirement and our team will prepare a quotation for you.</p>
+        <p>Browse our printing services, build a quote request, and our team will send you pricing. Business cards, banners, corporate gifting and more.</p>
         <div class="hero-ctas">
-          <a class="btn btn-accent" href="https://wa.me/97430252262" target="_blank" rel="noopener"><svg style="width:16px;height:16px"><use href="#ic-wa"/></svg>WhatsApp Printing Team</a>
-          <a class="btn btn-ghost" href="mailto:sales@raifacentre.qa?subject=Printing%20Enquiry">Email an Enquiry</a>
+          <a class="btn btn-ghost" href="https://wa.me/97430252262" target="_blank" rel="noopener"><svg style="width:16px;height:16px"><use href="#ic-wa"/></svg>Or WhatsApp us directly</a>
         </div>
       </div>
     </section>
-    <div style="max-width:640px;font-size:14.5px;color:var(--ink-soft);line-height:1.8;margin-top:8px;">
-      <p>A full online printing catalogue with instant quote requests is coming soon. In the meantime, reach our printing team directly on WhatsApp at <a href="https://wa.me/97430252262" target="_blank" rel="noopener" style="color:var(--brand);font-weight:600;">+974 3025 2262</a> or email <a href="mailto:sales@raifacentre.qa" style="color:var(--brand);font-weight:600;">sales@raifacentre.qa</a> — we respond fast.</p>
+    <div class="shop-layout" style="margin-top:24px;">
+      <aside class="filter-box">
+        <h4>Printing Categories</h4>
+        <label class="filter-opt"><input type="radio" name="pcatf" ${!activeCat?'checked':''} onchange="go('/printing')"> All Printing</label>
+        <div id="printingCatList"><p style="font-size:12px;color:var(--ink-soft);">Loading…</p></div>
+        <div id="quotePanel" style="margin-top:24px;"></div>
+      </aside>
+      <div class="shop-main">
+        <div class="shop-toolbar"><span id="printingCount">Loading…</span></div>
+        <div id="printingGrid">${skeletonGrid(6)}</div>
+        <div class="pager" id="printingPager"></div>
+      </div>
     </div>
   `;
+
+  loadPrintingCategories(activeCat);
+  renderQuotePanel();
+
+  const myReq = ++printingReqId;
+  try{
+    const result = await apiGet('get_printing_products', {item_group: activeCat, search: q, page, page_size: 24});
+    if(myReq !== printingReqId) return;
+    document.getElementById('printingCount').textContent = `${result.total} printing service${result.total!==1?'s':''}`;
+    document.getElementById('printingGrid').innerHTML = `<div class="prod-grid">${result.items.map(printingCard).join('') || '<p style="color:var(--ink-soft)">No printing items found. Check that items exist under the Printing Items group.</p>'}</div>`;
+    const totalPages = Math.max(1, Math.ceil(result.total / result.page_size));
+    document.getElementById('printingPager').innerHTML = totalPages>1 ? printingPagerHtml(page, totalPages, activeCat, q) : '';
+  }catch(e){
+    if(myReq !== printingReqId) return;
+    document.getElementById('printingGrid').innerHTML = `<p style="color:var(--danger)">Couldn't load printing services right now. Please refresh.</p>`;
+  }
+}
+
+async function loadPrintingCategories(activeCat){
+  try{
+    const cats = await apiGet('get_printing_categories', {});
+    const el = document.getElementById('printingCatList');
+    if(!el) return;
+    if(!cats.length){ el.innerHTML = ''; return; }
+    el.innerHTML = cats.map(c=>`<label class="filter-opt"><input type="radio" name="pcatf" ${activeCat===c.name?'checked':''} onchange="go('/printing?cat='+encodeURIComponent('${escapeHtml(c.name)}'))"> ${escapeHtml(c.item_group_name||c.name)}</label>`).join('');
+  }catch(e){
+    const el = document.getElementById('printingCatList'); if(el) el.innerHTML = '';
+  }
+}
+
+function printingCard(p){
+  printingLookup[p.item_code] = p;
+  return `<div class="prod-card">
+    <div class="prod-img">${thumbHtml(p)}</div>
+    <div class="prod-body">
+      <div class="prod-name">${escapeHtml(p.item_name)}</div>
+      <div class="prod-meta">${escapeHtml(p.item_group||'')}</div>
+      <div class="prod-bottom" style="margin-top:auto;">
+        <button class="btn btn-primary" style="width:100%;padding:9px;font-size:13px;" onclick="addToQuoteByCode('${encodeURIComponent(p.item_code)}',1)"><svg style="width:15px;height:15px"><use href="#ic-check"/></svg>Add to Quote</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function printingPagerHtml(current, total, cat, q){
+  const keep = new Set([1, total, current, current-1, current+1]);
+  let html = ''; let prev = 0;
+  for(let p=1;p<=total;p++){
+    if(!keep.has(p)) continue;
+    if(p-prev>1) html += `<span style="padding:0 4px;color:var(--ink-soft);">…</span>`;
+    const qs = (cat?'cat='+encodeURIComponent(cat)+'&':'')+(q?'q='+encodeURIComponent(q)+'&':'')+'page='+p;
+    html += `<button class="${p===current?'active':''}" onclick="go('/printing?${qs}')">${p}</button>`;
+    prev = p;
+  }
+  return html;
+}
+
+function renderQuotePanel(){
+  const el = document.getElementById('quotePanel');
+  if(!el) return;
+  if(!quote.length){
+    el.innerHTML = `<div style="border:1px dashed var(--line);border-radius:var(--radius);padding:16px;text-align:center;font-size:13px;color:var(--ink-soft);">Your quote list is empty. Add printing items to request pricing.</div>`;
+    return;
+  }
+  el.innerHTML = `
+    <div style="border:1px solid var(--line);border-radius:var(--radius);padding:16px;background:#fff;">
+      <h4 style="margin:0 0 12px;">Your Quote Request (${quoteCount()})</h4>
+      ${quote.map(l=>`
+        <div style="display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);">
+          <div style="flex:1;min-width:0;font-size:12.5px;font-weight:600;">${escapeHtml(l.item_name)}</div>
+          <div class="mini-stepper">
+            <button onclick="setQuoteQty('${l.item_code}', ${l.qty-1})">−</button>
+            <span>${l.qty}</span>
+            <button onclick="setQuoteQty('${l.item_code}', ${l.qty+1})">+</button>
+          </div>
+        </div>`).join('')}
+      <button class="btn btn-accent btn-block" style="margin-top:14px;" onclick="go('/quote')">Request Quote →</button>
+    </div>`;
+}
+
+function renderQuoteForm(){
+  if(!quote.length){
+    document.getElementById('app').innerHTML = `<div class="empty-state" style="padding:80px 20px;"><svg><use href="#ic-check"/></svg><p>Your quote list is empty — add printing items first.</p><button class="btn btn-primary" style="margin-top:10px" onclick="go('/printing')">Browse Printing</button></div>`;
+    return;
+  }
+  document.getElementById('app').innerHTML = `
+    <div class="crumb"><a href="#/">Home</a> / <a href="#/printing">Printing</a> / Request Quote</div>
+    <h1 style="font-family:var(--font-d);font-size:26px;margin:8px 0 20px;">Request a Quote</h1>
+    <div class="checkout-layout">
+      <div class="checkout-main">
+        <div class="form-card">
+          <h3>Your Details</h3>
+          <div class="field-row">
+            <div class="field"><label>Contact Name *</label><input id="qName" placeholder="Your full name"></div>
+            <div class="field"><label>Company Name *</label><input id="qCompany" placeholder="Your company"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Email *</label><input id="qEmail" placeholder="you@company.com"></div>
+            <div class="field"><label>Phone *</label><input id="qPhone" placeholder="+974 5xxx xxxx"></div>
+          </div>
+          <div class="field"><label>Notes / Requirements (optional)</label><textarea rows="3" id="qNotes" placeholder="Sizes, quantities, deadlines, artwork details…"></textarea></div>
+          <p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 4px;">* Required</p>
+          <div class="field-error" id="qError"></div>
+        </div>
+      </div>
+      <div class="summary-card">
+        <h3>Items to Quote</h3>
+        ${quote.map(l=>`<div class="sum-line"><span>${escapeHtml(l.item_name).slice(0,24)}${l.item_name.length>24?'…':''}</span><span>×${l.qty}</span></div>`).join('')}
+        <p style="font-size:12px;color:var(--ink-soft);margin:12px 0 0;">Our team will review and send you pricing by email.</p>
+        <button class="btn btn-accent btn-block" id="submitQuoteBtn" style="margin-top:14px;" onclick="submitQuote()">Submit Quote Request</button>
+      </div>
+    </div>
+  `;
+}
+
+async function submitQuote(){
+  const name = document.getElementById('qName').value.trim();
+  const company = document.getElementById('qCompany').value.trim();
+  const email = document.getElementById('qEmail').value.trim();
+  const phone = document.getElementById('qPhone').value.trim();
+  const notes = document.getElementById('qNotes').value.trim();
+  const errBox = document.getElementById('qError');
+
+  if(!name || !company || !email || !phone){
+    errBox.textContent = 'Please fill in name, company, email, and phone — all are required.';
+    errBox.classList.add('show');
+    return;
+  }
+  errBox.classList.remove('show');
+  const btn = document.getElementById('submitQuoteBtn');
+  btn.disabled = true; btn.textContent = 'Submitting…';
+
+  try{
+    const result = await apiPost('submit_quote_request', {
+      quote_items: JSON.stringify(quote.map(l=>({item_code:l.item_code, qty:l.qty}))),
+      customer_details: JSON.stringify({name, company, email, phone, notes})
+    });
+    quote = []; saveQuote(); renderQuoteBadge();
+    document.getElementById('app').innerHTML = `
+      <div class="success-box">
+        <div class="success-icon"><svg><use href="#ic-check"/></svg></div>
+        <h2 style="font-family:var(--font-d);font-size:22px;margin:0 0 6px;">Quote request sent!</h2>
+        <p style="color:var(--ink-soft);font-size:14px;">Thanks, ${escapeHtml(name)} — our team will review your request and email pricing to ${escapeHtml(email)} shortly.</p>
+        <div class="order-no">${escapeHtml(result.quote_id)}</div>
+        <button class="btn btn-primary" onclick="go('/printing')">Back to Printing</button>
+      </div>`;
+  }catch(e){
+    btn.disabled = false; btn.textContent = 'Submit Quote Request';
+    errBox.textContent = 'Something went wrong. Please try again or WhatsApp us at +974 3025 2262.';
+    errBox.classList.add('show');
+  }
 }
 function renderAbout(){
   document.getElementById('app').innerHTML = `
@@ -1190,7 +1395,8 @@ function router(){
   else if(seg[0]==='account'){ renderAccount(); }
   else if(seg[0]==='contact'){ renderContact(); }
   else if(seg[0]==='about'){ renderAbout(); }
-  else if(seg[0]==='printing'){ renderPrinting(); }
+  else if(seg[0]==='printing'){ renderPrinting(params); }
+  else if(seg[0]==='quote'){ renderQuoteForm(); }
   else{ renderHome(); }
   window.scrollTo({top:0,behavior:'instant'});
 }
@@ -1198,7 +1404,7 @@ window.addEventListener('hashchange', router);
 document.getElementById('searchInput').addEventListener('keydown', function(e){
   if(e.key==='Enter' && this.value.trim()){ go('/shop?q='+encodeURIComponent(this.value.trim())); }
 });
-document.addEventListener('DOMContentLoaded', function(){ renderCartBadge(); router(); });
+document.addEventListener('DOMContentLoaded', function(){ renderCartBadge(); renderQuoteBadge(); router(); });
 router();
 </script>
 </body>
