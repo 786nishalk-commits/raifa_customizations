@@ -13,6 +13,7 @@
 # checked against your actual setup first. See SETUP_README.md.
 # ============================================================================
 STATIONERY_ROOT_ITEM_GROUP = "Stationery - Barwa"   # Parent Item Group for the products this shop sells
+PRINTING_ROOT_ITEM_GROUP = "Printing Items"         # Parent Item Group for printing services (quote-only, no prices shown)
 DEFAULT_PRICE_LIST = "Standard Selling"             # Selling > Price List name used to look up rates
 DEFAULT_CUSTOMER_GROUP = "Individual"               # Customer Group assigned to new website customers
 DEFAULT_TERRITORY = "Qatar"                         # Territory assigned to new website customers
@@ -65,6 +66,37 @@ def get_stationery_item_groups():
     )
     groups.extend(children)
     return groups
+
+
+def get_printing_item_groups(root=None):
+    """Full printing group tree, walked recursively so nested sub-categories
+    (sub-groups of sub-groups) are all included. Printing is organised with
+    sub-categories, unlike the flat stationery structure, so this needs to
+    go deeper than one level."""
+    root = root or PRINTING_ROOT_ITEM_GROUP
+    collected = [root]
+    children = frappe.get_all(
+        "Item Group",
+        filters={"parent_item_group": root},
+        pluck="name",
+    )
+    for child in children:
+        collected.extend(get_printing_item_groups(child))
+    return collected
+
+
+def get_printing_subcategories():
+    """Direct sub-groups under the printing root, for organising the
+    printing page. Returns the sub-category name + how many quote-able
+    items sit anywhere beneath it."""
+    subs = frappe.get_all(
+        "Item Group",
+        filters={"parent_item_group": PRINTING_ROOT_ITEM_GROUP},
+        fields=["name", "item_group_name"],
+        order_by="item_group_name asc",
+        limit_page_length=100,
+    )
+    return subs
 
 
 def attach_rates(items, price_list=DEFAULT_PRICE_LIST):
@@ -487,3 +519,150 @@ def get_orders_by_mobile(mobile):
         order_by="creation desc",
         limit_page_length=20,
     )
+
+
+# ---------------------------------------------------------------------------
+# Printing services — quote-only, no prices shown to customers
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist(allow_guest=True)
+def get_printing_products(item_group=None, search=None, page=1, page_size=24):
+    """Printing products listing. Deliberately does NOT return prices - the
+    storefront shows 'Add to Quote' instead of a buy button, and pricing is
+    added by your team on the draft Quotation. Guest-accessible for browsing."""
+    page = cint(page) or 1
+    page_size = min(cint(page_size) or 24, 60)
+
+    valid_groups = get_printing_item_groups()
+    filters = base_item_filters()
+    filters["item_group"] = ["in", valid_groups]
+    if item_group and item_group in valid_groups:
+        filters["item_group"] = item_group
+
+    or_filters = None
+    search = (search or "").strip()
+    if search:
+        words = [w for w in search.split() if w]
+        or_filters = []
+        for w in words:
+            or_filters.append(["item_name", "like", f"%{w}%"])
+            or_filters.append(["item_code", "like", f"%{w}%"])
+
+    total = frappe.db.count("Item", filters=filters)
+    items = frappe.get_all(
+        "Item",
+        filters=filters,
+        or_filters=or_filters,
+        fields=["item_code", "item_name", "item_group", "image", "stock_uom", "description"],
+        order_by="item_name asc",
+        limit_start=(page - 1) * page_size,
+        limit_page_length=page_size,
+    )
+    # No attach_rates() here — printing is quote-only, prices never leave the server.
+    return {"items": items, "total": total, "page": page, "page_size": page_size}
+
+
+@frappe.whitelist(allow_guest=True)
+def get_printing_categories():
+    """Sub-categories under the printing root, for the printing page filter."""
+    return get_printing_subcategories()
+
+
+@frappe.whitelist(allow_guest=True)
+def submit_quote_request(quote_items, customer_details):
+    """Creates a DRAFT Quotation in ERPNext from a printing quote request,
+    and emails sales@raifacentre.qa. Your team opens the draft, adds prices,
+    and sends it. No prices are set here — everything comes in at rate 0 for
+    staff to fill in.
+
+    quote_items:      JSON list of {"item_code": str, "qty": number}
+    customer_details: JSON dict of {"name","company","email","phone","notes"}
+    """
+    quote_items = frappe.parse_json(quote_items)
+    customer_details = frappe.parse_json(customer_details)
+
+    if not quote_items:
+        frappe.throw(_("Your quote request is empty."))
+
+    name = (customer_details.get("name") or "").strip()
+    company = (customer_details.get("company") or "").strip()
+    email = (customer_details.get("email") or "").strip()
+    phone = (customer_details.get("phone") or "").strip()
+
+    # All four are mandatory, per the agreed spec.
+    if not name or not company or not email or not phone:
+        frappe.throw(_("Name, company, email, and phone are all required."))
+
+    valid_groups = get_printing_item_groups()
+    customer = get_or_create_customer(name, phone, email)
+
+    quotation = frappe.new_doc("Quotation")
+    quotation.quotation_to = "Customer"
+    quotation.party_name = customer
+    quotation.order_type = "Sales"
+
+    meta = frappe.get_meta("Quotation")
+    if meta.has_field("custom_order_source"):
+        quotation.custom_order_source = "Website - Printing"
+    if meta.has_field("custom_company_name"):
+        quotation.custom_company_name = company
+    if meta.has_field("custom_customer_mobile"):
+        quotation.custom_customer_mobile = phone
+    if meta.has_field("custom_order_notes") and customer_details.get("notes"):
+        quotation.custom_order_notes = customer_details.get("notes")
+
+    added_any = False
+    for line in quote_items:
+        item_code = line.get("item_code")
+        qty = flt(line.get("qty") or 0)
+        if not item_code or qty <= 0:
+            continue
+        check = base_item_filters()
+        check["item_code"] = item_code
+        check["item_group"] = ["in", valid_groups]
+        if not frappe.db.exists("Item", check):
+            continue
+        quotation.append("items", {
+            "item_code": item_code,
+            "qty": qty,
+            "rate": 0,  # staff fills in pricing
+        })
+        added_any = True
+
+    if not added_any:
+        frappe.throw(_("None of the items in your request are currently available."))
+
+    # Leave as a draft (do NOT submit) so staff can add pricing first.
+    quotation.insert(ignore_permissions=True)
+
+    notify_new_quote(quotation, name, company, email, phone)
+
+    return {"quote_id": quotation.name}
+
+
+def notify_new_quote(quotation, name, company, email, phone):
+    """Emails sales@raifacentre.qa about a new printing quote request.
+    Wrapped in try/except so an email failure never blocks the quote itself
+    from being saved."""
+    try:
+        item_lines = "".join(
+            f"<tr><td style='padding:4px 10px 4px 0;'>{d.item_code} - {d.item_name}</td>"
+            f"<td style='padding:4px 10px;text-align:right;'>Qty: {d.qty}</td></tr>"
+            for d in quotation.items
+        )
+        frappe.sendmail(
+            recipients=["sales@raifacentre.qa"],
+            subject=f"New printing quote request {quotation.name} - {company}",
+            message=f"""
+                <p>New printing quote request from the website.</p>
+                <p><b>Quotation:</b> {quotation.name} (draft - add pricing before sending)<br>
+                <b>Contact:</b> {frappe.utils.escape_html(name)}<br>
+                <b>Company:</b> {frappe.utils.escape_html(company)}<br>
+                <b>Email:</b> {frappe.utils.escape_html(email)}<br>
+                <b>Phone:</b> {frappe.utils.escape_html(phone)}</p>
+                <table style="border-collapse:collapse;">{item_lines}</table>
+                <p>Open the draft Quotation in ERPNext, add prices, and send it to the customer.</p>
+            """,
+        )
+    except Exception:
+        frappe.log_error(title="Shop: printing quote notification email failed")
